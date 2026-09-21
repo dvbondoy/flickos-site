@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import hero from '../assets/screenshots/og-image.png';
+import redmond from '../assets/screenshots/layout-redmond.png';
 import cupertino from '../assets/screenshots/layout-cupertino.png';
 import traditional from '../assets/screenshots/layout-traditional.png';
 
@@ -43,7 +44,7 @@ const layouts = [
 	{
 		name: 'Redmond',
 		blurb: 'One bottom panel — the default.',
-		image: hero,
+		image: redmond,
 	},
 	{
 		name: 'Cupertino',
@@ -138,7 +139,9 @@ const keys = [
 			{
 				layouts.map((l) => (
 					<li>
-						<Image src={l.image} alt={`${l.name} layout`} widths={[480, 720, 960]} sizes="(max-width: 800px) 100vw, 33vw" />
+						<div class="shot">
+							<Image src={l.image} alt={`${l.name} layout`} widths={[480, 720, 960]} sizes="(max-width: 800px) 100vw, 33vw" />
+						</div>
 						<h3>{l.name}</h3>
 						<p>{l.blurb}</p>
 					</li>
@@ -340,12 +343,16 @@ const keys = [
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
-	.layout-grid img {
-		width: 100%;
-		height: auto;
-		display: block;
-		border: 1px solid var(--flick-border);
+	.layout-grid .shot {
 		aspect-ratio: 16 / 10;
+		overflow: hidden;
+		border: 1px solid var(--flick-border);
+		background: var(--flick-surface, #1b1f27);
+	}
+	.layout-grid .shot :global(img) {
+		width: 100%;
+		height: 100%;
+		display: block;
 		object-fit: cover;
 		object-position: top center;
 	}
