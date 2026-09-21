@@ -1,0 +1,63 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+	<div class="inner">
+		<p class="brand flick-display">FlickOS</p>
+		<p class="tag">Lightweight Debian 13 desktop · labwc Wayland · GPL-3.0</p>
+		<ul class="links">
+			<li><a href="https://github.com/dvbondoy/FlickOS">GitHub</a></li>
+			<li><a href="https://sourceforge.net/projects/flickos/files/">SourceForge</a></li>
+			<li><a href="https://www.reddit.com/r/flickos/">Reddit</a></li>
+			<li><a href="https://dvbondoy.github.io/flickos-apt/">Apt repository</a></li>
+			<li><a href="/docs/01-overview/">Docs</a></li>
+			<li><a href="/download/">Download</a></li>
+		</ul>
+		<p class="copy">© {year} FlickOS contributors</p>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		margin-top: 4rem;
+		border-top: 1px solid var(--flick-border);
+		background: var(--flick-panel);
+	}
+	.inner {
+		max-width: 72rem;
+		margin-inline: auto;
+		padding: 2.5rem 1.25rem 2rem;
+	}
+	.brand {
+		font-size: 1.35rem;
+		font-weight: 600;
+		color: var(--flick-title);
+		margin: 0;
+	}
+	.tag {
+		margin: 0.4rem 0 1.25rem;
+		color: var(--flick-muted);
+		font-size: 0.95rem;
+	}
+	.links {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1.25rem;
+	}
+	.links a {
+		color: var(--flick-fg) !important;
+		text-decoration: none !important;
+	}
+	.links a:hover {
+		color: var(--flick-accent) !important;
+	}
+	.copy {
+		margin: 1.75rem 0 0;
+		font-size: 0.85rem;
+		color: var(--flick-muted);
+	}
+</style>

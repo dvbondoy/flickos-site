@@ -1,0 +1,48 @@
+---
+import logoUrl from '../../assets/brand/flickos.svg';
+---
+
+<span class="site-title sl-flex">
+	<a href="/" class="site-title-link">
+		<img src={logoUrl.src} alt="" width="28" height="28" />
+		<span class="sr-only">FlickOS</span>
+	</a>
+	<nav class="flick-docs-nav" aria-label="Site">
+		<a href="/">Home</a>
+		<a href="/download/">Download</a>
+		<a href="/screenshots/">Screenshots</a>
+		<a href="/docs/01-overview/">Docs</a>
+	</nav>
+</span>
+
+<style>
+	.site-title-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		text-decoration: none;
+		color: var(--sl-color-white);
+	}
+	.site-title-link img {
+		border-radius: 6px;
+	}
+	.flick-docs-nav {
+		display: none;
+		gap: 1rem;
+		margin-inline-start: 1.25rem;
+		font-size: 0.9rem;
+	}
+	.flick-docs-nav a {
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+	}
+	.flick-docs-nav a:hover {
+		color: var(--sl-color-accent-high);
+	}
+	@media (min-width: 50rem) {
+		.flick-docs-nav {
+			display: inline-flex;
+			align-items: center;
+		}
+	}
+</style>

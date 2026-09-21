@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="12 1 52 52" width="16" height="16">
+  <!-- FlickOS logo, one color for panels: GTK draws it in the text color.
+       Full-color version: ../../scalable/apps/flickos.svg. -->
+  <path fill="#d3dae3" d="M58.01 27.65 A23 23 0 1 1 14.89 30.66 A21 21 0 1 0 58.01 27.65 Z"/>
+  <path fill="#d3dae3" d="M28 52 C17 42 16 20 62 2 C51 9 43 16 39 25 C46 22 52 22 56 23 C44 28 34 36 28 52 Z"/>
+</svg>

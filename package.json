@@ -1,0 +1,28 @@
+{
+  "name": "flickos-site",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "sync-docs": "node scripts/sync-docs.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/starlight": "^0.42.2",
+    "@astrojs/starlight-tailwind": "^5.0.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vercel/analytics": "^1.6.1",
+    "astro": "^7.3.3",
+    "astro-mermaid": "^2.1.0",
+    "mermaid": "^11.12.0",
+    "sharp": "^0.35.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

@@ -1,0 +1,190 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+
+const SHA256 = '20a96701d0734d55a06f53a0d09c9577ac3e609bd5f7559566aef8956c374c74';
+const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
+---
+
+<MarketingLayout
+	title="Download"
+	description="Download FlickOS 2.0, verify the SHA256 checksum, write a USB stick, and install with Calamares."
+>
+	<section class="page">
+		<header class="page-head flick-anim-rise">
+			<h1 class="flick-display">Download FlickOS 2.0</h1>
+			<p>
+				Hybrid live ISO for amd64 — boots on BIOS and UEFI. About 1.4&nbsp;GB.
+			</p>
+			<p class="cta">
+				<a class="flick-btn primary" href={ISO_URL} rel="noopener noreferrer">Get the ISO on SourceForge</a>
+			</p>
+		</header>
+
+		<aside class="warn" role="note">
+			<strong>Coming from 1.x?</strong>
+			FlickOS 1.x was Ubuntu 20.04 / LXLE. There is <em>no in-place upgrade</em> to 2.0.
+			Back up your files and install fresh.
+		</aside>
+
+		<section class="block">
+			<h2 class="flick-display">Verify the download</h2>
+			<p>
+				After downloading <code>FlickOS-64bit-v2.0.iso</code>, check the SHA-256:
+			</p>
+			<div class="hash-row">
+				<code id="sha256">{SHA256}</code>
+				<button type="button" class="flick-btn ghost" id="copy-sha" data-hash={SHA256}>
+					Copy
+				</button>
+			</div>
+			<pre class="cmd"><code>echo "{SHA256}  FlickOS-64bit-v2.0.iso" | sha256sum -c</code></pre>
+			<p class="hint">Or download <code>SHA256SUMS</code> from the same SourceForge folder and run <code>sha256sum -c SHA256SUMS</code>.</p>
+		</section>
+
+		<section class="block">
+			<h2 class="flick-display">Write a USB stick</h2>
+			<ol>
+				<li>Use <a href="https://etcher.balena.io/" rel="noopener noreferrer">Balena Etcher</a>, Rufus (DD mode), or another hybrid-ISO writer.</li>
+				<li>
+					Or with <code>dd</code> (replace the device path):
+					<pre class="cmd"><code>sudo dd if=FlickOS-64bit-v2.0.iso of=/dev/sdX bs=4M status=progress oflag=sync</code></pre>
+				</li>
+				<li>Boot from the USB stick (disable Secure Boot if your machine requires it for unsigned media).</li>
+			</ol>
+		</section>
+
+		<section class="block">
+			<h2 class="flick-display">Live session</h2>
+			<p>
+				The live session logs in automatically as <code>user</code> with password <code>live</code>.
+				Explore the desktop, then right-click the desktop and choose <strong>Install FlickOS</strong> when you are ready.
+			</p>
+		</section>
+
+		<section class="block">
+			<h2 class="flick-display">Install</h2>
+			<ol>
+				<li>Start the Calamares installer from the desktop menu.</li>
+				<li>Follow the steps: language, keyboard, partitioning, user account.</li>
+				<li>Reboot into the installed system when Calamares finishes.</li>
+			</ol>
+			<p>
+				Installed systems get a graphical login (greetd). FlickOS packages update from the
+				<a href="https://dvbondoy.github.io/flickos-apt/">apt repository</a>.
+			</p>
+		</section>
+
+		<section class="block">
+			<h2 class="flick-display">Need more detail?</h2>
+			<p>
+				<a href="/docs/02-building-and-testing/">Building and testing</a>
+				covers QEMU boots and install checks. Source and issues live on
+				<a href="https://github.com/dvbondoy/FlickOS">GitHub</a>.
+			</p>
+		</section>
+	</section>
+</MarketingLayout>
+
+<script>
+	const btn = document.getElementById('copy-sha');
+	btn?.addEventListener('click', async () => {
+		const hash = btn.getAttribute('data-hash') ?? '';
+		try {
+			await navigator.clipboard.writeText(hash);
+			btn.textContent = 'Copied';
+			setTimeout(() => {
+				btn.textContent = 'Copy';
+			}, 1500);
+		} catch {
+			btn.textContent = 'Select above';
+		}
+	});
+</script>
+
+<style>
+	.page {
+		max-width: 44rem;
+		margin: 0 auto;
+		padding: 2.5rem 1.25rem 0;
+	}
+	.page-head h1 {
+		margin: 0;
+		font-size: clamp(2rem, 5vw, 2.75rem);
+		color: var(--flick-title);
+	}
+	.page-head p {
+		margin: 0.75rem 0 0;
+		color: var(--flick-muted);
+		line-height: 1.5;
+	}
+	.cta {
+		margin-top: 1.25rem !important;
+	}
+	.warn {
+		margin-top: 2rem;
+		padding: 1rem 1.1rem;
+		border-left: 3px solid var(--flick-warning);
+		background: color-mix(in srgb, var(--flick-warning) 12%, var(--flick-panel));
+		color: var(--flick-fg);
+		line-height: 1.45;
+	}
+	.warn strong {
+		display: block;
+		margin-bottom: 0.35rem;
+		color: var(--flick-title);
+	}
+	.block {
+		margin-top: 2.5rem;
+	}
+	.block h2 {
+		margin: 0 0 0.75rem;
+		font-size: 1.4rem;
+		color: var(--flick-title);
+	}
+	.block p,
+	.block li {
+		line-height: 1.55;
+		color: var(--flick-fg);
+	}
+	.block ol {
+		padding-left: 1.2rem;
+	}
+	.block li + li {
+		margin-top: 0.75rem;
+	}
+	.hash-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		align-items: center;
+		margin: 1rem 0;
+	}
+	.hash-row code {
+		flex: 1 1 16rem;
+		font-size: 0.78rem;
+		word-break: break-all;
+		background: var(--flick-base);
+		border: 1px solid var(--flick-border);
+		padding: 0.65rem 0.75rem;
+		border-radius: 0.3rem;
+		color: var(--flick-title);
+	}
+	.cmd {
+		margin: 0.75rem 0;
+		padding: 0.85rem 1rem;
+		overflow-x: auto;
+		background: var(--flick-panel);
+		border: 1px solid var(--flick-border);
+		border-radius: 0.3rem;
+		font-size: 0.85rem;
+		color: var(--flick-title);
+	}
+	.hint {
+		font-size: 0.92rem;
+		color: var(--flick-muted) !important;
+	}
+	code {
+		font-family: ui-monospace, 'IBM Plex Mono', monospace;
+		font-size: 0.9em;
+	}
+</style>

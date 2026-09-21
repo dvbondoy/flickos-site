@@ -1,0 +1,88 @@
+---
+import logo from '../assets/brand/flickos.svg';
+
+const path = Astro.url.pathname;
+const links = [
+	{ href: '/', label: 'Home' },
+	{ href: '/screenshots/', label: 'Screenshots' },
+	{ href: '/download/', label: 'Download' },
+	{ href: '/docs/01-overview/', label: 'Docs' },
+];
+---
+
+<header class="site-header">
+	<div class="inner">
+		<a class="brand" href="/" aria-label="FlickOS home">
+			<img src={logo.src} alt="" width="36" height="36" />
+			<span class="flick-display">FlickOS</span>
+		</a>
+		<nav aria-label="Primary">
+			{
+				links.map((link) => (
+					<a
+						href={link.href}
+						aria-current={
+							link.href === '/'
+								? path === '/'
+									? 'page'
+									: undefined
+								: path.startsWith(link.href)
+									? 'page'
+									: undefined
+						}
+					>
+						{link.label}
+					</a>
+				))
+			}
+		</nav>
+	</div>
+</header>
+
+<style>
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 40;
+		backdrop-filter: blur(10px);
+		background: color-mix(in srgb, var(--flick-panel) 88%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--flick-border) 80%, transparent);
+	}
+	.inner {
+		max-width: 72rem;
+		margin-inline: auto;
+		padding: 0.85rem 1.25rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		text-decoration: none;
+		color: var(--flick-title);
+		font-weight: 600;
+		font-size: 1.2rem;
+	}
+	.brand img {
+		border-radius: 8px;
+	}
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem 1rem;
+		font-size: 0.95rem;
+	}
+	nav a {
+		color: var(--flick-fg) !important;
+		text-decoration: none !important;
+		opacity: 0.85;
+	}
+	nav a:hover,
+	nav a[aria-current='page'] {
+		color: var(--flick-accent) !important;
+		opacity: 1;
+	}
+</style>

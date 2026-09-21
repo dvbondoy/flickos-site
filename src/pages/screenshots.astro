@@ -1,0 +1,147 @@
+---
+import { Image } from 'astro:assets';
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import redmond from '../assets/screenshots/layout-redmond.png';
+import cupertino from '../assets/screenshots/layout-cupertino.png';
+import traditional from '../assets/screenshots/layout-traditional.png';
+import chooser from '../assets/screenshots/layout-chooser.png';
+import styleDark from '../assets/screenshots/style-dark.png';
+import styleLight from '../assets/screenshots/style-light.png';
+
+const layouts = [
+	{ title: 'Redmond', image: redmond, caption: 'Default bottom panel with window list and tray.' },
+	{ title: 'Cupertino', image: cupertino, caption: 'Top bar and centered dock.' },
+	{ title: 'Traditional', image: traditional, caption: 'Top panel and bottom window list.' },
+];
+---
+
+<MarketingLayout
+	title="Screenshots"
+	description="FlickOS 2.0 layouts, dark and light styles, and the layout chooser — captured from a live QEMU session."
+>
+	<section class="page">
+		<header class="page-head flick-anim-rise">
+			<h1 class="flick-display">Screenshots</h1>
+			<p>Real desktop captures from FlickOS 2.0 — not mockups.</p>
+		</header>
+
+		<section class="block">
+			<h2 class="flick-display">Layouts</h2>
+			<ul class="trio">
+				{
+					layouts.map((item) => (
+						<li>
+							<Image
+								src={item.image}
+								alt={`FlickOS ${item.title} layout`}
+								widths={[480, 800, 1200]}
+								sizes="(max-width: 900px) 100vw, 33vw"
+							/>
+							<h3>{item.title}</h3>
+							<p>{item.caption}</p>
+						</li>
+					))
+				}
+			</ul>
+		</section>
+
+		<section class="block">
+			<h2 class="flick-display">Dark and Light</h2>
+			<p class="intro">Arc-Dark is the default. Light recolors the desktop live.</p>
+			<ul class="pair">
+				<li>
+					<Image src={styleDark} alt="FlickOS dark style" widths={[640, 960, 1280]} sizes="(max-width: 900px) 100vw, 50vw" />
+					<h3>Dark</h3>
+				</li>
+				<li>
+					<Image src={styleLight} alt="FlickOS light style" widths={[640, 960, 1280]} sizes="(max-width: 900px) 100vw, 50vw" />
+					<h3>Light</h3>
+				</li>
+			</ul>
+		</section>
+
+		<section class="block">
+			<h2 class="flick-display">Layout chooser</h2>
+			<p class="intro">Opens from Settings, and once on a new account’s first login.</p>
+			<figure class="wide">
+				<Image
+					src={chooser}
+					alt="FlickOS Desktop Layout and Style chooser"
+					widths={[720, 1080, 1440]}
+					sizes="min(100vw, 72rem)"
+				/>
+			</figure>
+		</section>
+
+		<p class="cta-row">
+			<a class="flick-btn primary" href="/download/">Download FlickOS</a>
+		</p>
+	</section>
+</MarketingLayout>
+
+<style>
+	.page {
+		max-width: 72rem;
+		margin: 0 auto;
+		padding: 2.5rem 1.25rem 0;
+	}
+	.page-head h1 {
+		margin: 0;
+		font-size: clamp(2rem, 5vw, 2.75rem);
+		color: var(--flick-title);
+	}
+	.page-head p {
+		margin: 0.6rem 0 0;
+		color: var(--flick-muted);
+		max-width: 36rem;
+	}
+	.block {
+		margin-top: 3rem;
+	}
+	.block h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1.5rem;
+		color: var(--flick-title);
+	}
+	.intro {
+		margin: 0 0 1.25rem;
+		color: var(--flick-muted);
+	}
+	.trio,
+	.pair {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1.5rem;
+	}
+	@media (min-width: 56rem) {
+		.trio {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+		.pair {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	.trio img,
+	.pair img,
+	.wide :global(img) {
+		width: 100%;
+		height: auto;
+		display: block;
+		border: 1px solid var(--flick-border);
+	}
+	.trio h3,
+	.pair h3 {
+		margin: 0.65rem 0 0.2rem;
+		color: var(--flick-title);
+	}
+	.trio p {
+		margin: 0;
+		color: var(--flick-muted);
+		font-size: 0.95rem;
+	}
+	.cta-row {
+		margin: 3rem 0 0;
+	}
+</style>

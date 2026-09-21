@@ -1,0 +1,386 @@
+---
+import { Image } from 'astro:assets';
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import hero from '../assets/screenshots/layout-redmond.png';
+import cupertino from '../assets/screenshots/layout-cupertino.png';
+import traditional from '../assets/screenshots/layout-traditional.png';
+
+const specs = [
+	{ label: 'Debian 13', detail: 'trixie · Linux 6.12 LTS' },
+	{ label: 'labwc Wayland', detail: 'lightweight compositor' },
+	{ label: 'amd64', detail: 'BIOS + UEFI hybrid ISO' },
+	{ label: '~1.4 GB', detail: 'live ISO + Calamares' },
+];
+
+const features = [
+	{
+		title: 'Three live layouts',
+		body: 'Redmond, Cupertino, and Traditional — switch from Settings without logging out.',
+	},
+	{
+		title: 'Arc look everywhere',
+		body: 'GTK, panel, terminal, launcher, notifications, boot menu, splash, and installer share the Arc palette. Light style available.',
+	},
+	{
+		title: 'Optional tiling',
+		body: 'flick-tiler is off by default. Super+T toggles it; Super+M cycles arrangements.',
+	},
+	{
+		title: 'Ready to use',
+		body: 'Firefox ESR, LibreOffice, VLC, PipeWire, NetworkManager, Flatpak, firewall on by default.',
+	},
+	{
+		title: 'Updates that stick',
+		body: 'FlickOS packages update via the apt repository alongside normal Debian security updates.',
+	},
+	{
+		title: 'Install when ready',
+		body: 'Boot the live session, explore, then install with Calamares from the desktop menu.',
+	},
+];
+
+const layouts = [
+	{
+		name: 'Redmond',
+		blurb: 'One bottom panel — the default.',
+		image: hero,
+	},
+	{
+		name: 'Cupertino',
+		blurb: 'Top bar and an auto-hiding dock.',
+		image: cupertino,
+	},
+	{
+		name: 'Traditional',
+		blurb: 'Top panel with a window list.',
+		image: traditional,
+	},
+];
+
+const keys = [
+	{ key: 'Super+Enter', action: 'Terminal' },
+	{ key: 'Super+D', action: 'App launcher' },
+	{ key: 'Super+E', action: 'File manager' },
+	{ key: 'Super+B', action: 'Web browser' },
+	{ key: 'Super+V', action: 'Clipboard history' },
+	{ key: 'Super+Q', action: 'Close window' },
+	{ key: 'Super+L', action: 'Lock screen' },
+	{ key: 'Super+Shift+E', action: 'Log out' },
+	{ key: 'Super+T', action: 'Tiling on/off' },
+];
+---
+
+<MarketingLayout
+	title="FlickOS"
+	description="FlickOS 2.0 is a lightweight Debian 13 Wayland desktop. Live ISO, Calamares installer, Arc look, three layouts."
+>
+	<section class="hero" aria-label="FlickOS">
+		<div class="hero-copy flick-anim-rise">
+			<p class="brand flick-display">FlickOS</p>
+			<h1 class="flick-display">A light Debian desktop that feels finished.</h1>
+			<p class="lede">
+				Version 2.0 on Debian 13 with a labwc Wayland session, Arc theming, and a live ISO you can install when you are ready.
+			</p>
+			<div class="cta">
+				<a class="flick-btn primary" href="/download/">Download 2.0</a>
+				<a class="flick-btn ghost" href="/docs/01-overview/">Read the docs</a>
+			</div>
+		</div>
+		<div class="hero-visual flick-anim-hero" style="animation-delay: 0.12s">
+			<Image
+				src={hero}
+				alt="FlickOS Redmond layout desktop in a live session"
+				widths={[720, 1080, 1440, 1920]}
+				sizes="100vw"
+				class="hero-shot"
+				loading="eager"
+				fetchpriority="high"
+			/>
+		</div>
+	</section>
+
+	<section class="specs flick-anim-fade" style="animation-delay: 0.25s" aria-label="Specifications">
+		<ul>
+			{
+				specs.map((s) => (
+					<li>
+						<span class="label">{s.label}</span>
+						<span class="detail">{s.detail}</span>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+
+	<section class="section features">
+		<div class="section-head">
+			<h2 class="flick-display">Built for everyday use</h2>
+			<p>What ships in FlickOS 2.0 — the same stack the ISO boots.</p>
+		</div>
+		<ul class="feature-list">
+			{
+				features.map((f) => (
+					<li>
+						<h3>{f.title}</h3>
+						<p>{f.body}</p>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+
+	<section class="section layouts">
+		<div class="section-head">
+			<h2 class="flick-display">Three layouts, one desktop</h2>
+			<p>Switch live from Settings → Desktop Layout &amp; Style.</p>
+		</div>
+		<ul class="layout-grid">
+			{
+				layouts.map((l) => (
+					<li>
+						<Image src={l.image} alt={`${l.name} layout`} widths={[480, 720, 960]} sizes="(max-width: 800px) 100vw, 33vw" />
+						<h3>{l.name}</h3>
+						<p>{l.blurb}</p>
+					</li>
+				))
+			}
+		</ul>
+		<p class="more">
+			<a href="/screenshots/">See more screenshots</a>
+		</p>
+	</section>
+
+	<section class="section keys">
+		<div class="section-head">
+			<h2 class="flick-display">Keybindings</h2>
+			<p>Right-click the desktop for the full menu.</p>
+		</div>
+		<table>
+			<thead>
+				<tr>
+					<th scope="col">Key</th>
+					<th scope="col">Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					keys.map((k) => (
+						<tr>
+							<td><kbd>{k.key}</kbd></td>
+							<td>{k.action}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</section>
+</MarketingLayout>
+
+<style>
+	.hero {
+		display: grid;
+		gap: 0;
+	}
+	.hero-copy {
+		max-width: 40rem;
+		margin: 0 auto;
+		padding: 2.75rem 1.25rem 1.75rem;
+		text-align: center;
+	}
+	.brand {
+		margin: 0 0 0.75rem;
+		font-size: clamp(2.75rem, 8vw, 4.25rem);
+		font-weight: 700;
+		color: var(--flick-title);
+		line-height: 1;
+	}
+	.hero-copy h1 {
+		margin: 0;
+		font-size: clamp(1.35rem, 3.2vw, 1.85rem);
+		font-weight: 600;
+		color: var(--flick-fg);
+		line-height: 1.25;
+	}
+	.lede {
+		margin: 1rem auto 0;
+		max-width: 34rem;
+		font-size: 1.05rem;
+		line-height: 1.55;
+		color: var(--flick-muted);
+	}
+	.cta {
+		margin-top: 1.5rem;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem;
+	}
+	:global(.flick-btn) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.7rem 1.2rem;
+		border-radius: 0.35rem;
+		font-weight: 600;
+		text-decoration: none !important;
+		border: 1px solid transparent;
+		transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	}
+	:global(.flick-btn.primary) {
+		background: var(--flick-accent);
+		color: var(--flick-accent-fg) !important;
+	}
+	:global(.flick-btn.primary:hover) {
+		filter: brightness(1.08);
+	}
+	:global(.flick-btn.ghost) {
+		background: transparent;
+		border-color: color-mix(in srgb, var(--flick-fg) 28%, transparent);
+		color: var(--flick-fg) !important;
+	}
+	:global(.flick-btn.ghost:hover) {
+		border-color: var(--flick-accent);
+		color: var(--flick-accent) !important;
+	}
+	.hero-visual {
+		width: 100%;
+		line-height: 0;
+		border-block: 1px solid var(--flick-border);
+		background: var(--flick-panel);
+	}
+	.hero-shot {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+	.specs {
+		max-width: 72rem;
+		margin: 0 auto;
+		padding: 1.75rem 1.25rem;
+	}
+	.specs ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem 1.5rem;
+	}
+	@media (min-width: 48rem) {
+		.specs ul {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+	.specs .label {
+		display: block;
+		font-weight: 600;
+		color: var(--flick-title);
+	}
+	.specs .detail {
+		display: block;
+		font-size: 0.9rem;
+		color: var(--flick-muted);
+		margin-top: 0.15rem;
+	}
+	.section {
+		max-width: 72rem;
+		margin: 0 auto;
+		padding: 3rem 1.25rem 0;
+	}
+	.section-head {
+		max-width: 36rem;
+		margin-bottom: 1.75rem;
+	}
+	.section-head h2 {
+		margin: 0;
+		font-size: clamp(1.6rem, 3vw, 2rem);
+		color: var(--flick-title);
+	}
+	.section-head p {
+		margin: 0.5rem 0 0;
+		color: var(--flick-muted);
+	}
+	.feature-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1.5rem 2rem;
+	}
+	@media (min-width: 48rem) {
+		.feature-list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (min-width: 64rem) {
+		.feature-list {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+	.feature-list h3 {
+		margin: 0 0 0.4rem;
+		font-size: 1.05rem;
+		color: var(--flick-title);
+	}
+	.feature-list p {
+		margin: 0;
+		line-height: 1.5;
+		color: var(--flick-fg);
+		opacity: 0.9;
+	}
+	.layout-grid {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1.5rem;
+	}
+	@media (min-width: 56rem) {
+		.layout-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+	.layout-grid img {
+		width: 100%;
+		height: auto;
+		display: block;
+		border: 1px solid var(--flick-border);
+	}
+	.layout-grid h3 {
+		margin: 0.75rem 0 0.25rem;
+		color: var(--flick-title);
+	}
+	.layout-grid p {
+		margin: 0;
+		color: var(--flick-muted);
+		font-size: 0.95rem;
+	}
+	.more {
+		margin: 1.25rem 0 0;
+	}
+	.keys table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.98rem;
+	}
+	.keys th,
+	.keys td {
+		text-align: left;
+		padding: 0.65rem 0.5rem;
+		border-bottom: 1px solid var(--flick-border);
+	}
+	.keys th {
+		color: var(--flick-muted);
+		font-weight: 500;
+		font-size: 0.85rem;
+	}
+	kbd {
+		font-family: ui-monospace, 'IBM Plex Mono', monospace;
+		font-size: 0.9em;
+		color: var(--flick-title);
+		background: var(--flick-base);
+		border: 1px solid var(--flick-border);
+		padding: 0.15rem 0.4rem;
+		border-radius: 0.25rem;
+	}
+</style>

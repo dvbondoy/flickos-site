@@ -1,0 +1,30 @@
+@layer base, starlight, theme, components, utilities;
+
+@import "@astrojs/starlight-tailwind";
+@import "tailwindcss";
+
+@theme {
+	--font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+	--font-display: "Outfit", "IBM Plex Sans", sans-serif;
+
+	--color-arc-bg: #383c4a;
+	--color-arc-base: #404552;
+	--color-arc-panel: #2f343f;
+	--color-arc-border: #2b2e39;
+	--color-arc-fg: #d3dae3;
+	--color-arc-title: #cfdae7;
+	--color-arc-accent: #5294e2;
+	--color-arc-accent-fg: #ffffff;
+	--color-arc-warning: #f27835;
+	--color-arc-error: #fc4138;
+	--color-arc-success: #73d216;
+	--color-arc-muted: #90939b;
+	--color-arc-link: #a9caf1;
+
+	--color-arc-light-bg: #f5f6f7;
+	--color-arc-light-base: #ffffff;
+	--color-arc-light-panel: #e7e8eb;
+	--color-arc-light-border: #dcdfe3;
+	--color-arc-light-fg: #5c616c;
+	--color-arc-light-title: #525d76;
+}

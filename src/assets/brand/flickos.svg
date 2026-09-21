@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- FlickOS logo: a wing flicking through a ring, with speed lines, on an
+       Arc-Dark tile. Colors: tools/check-palette.py. The one-color panel
+       version is ../../symbolic/apps/flickos-symbolic.svg. -->
+  <rect width="64" height="64" rx="14" fill="#383c4a"/>
+  <g transform="translate(5 6) scale(0.84)">
+    <path fill="#5294e2" d="M58.01 27.65 A23 23 0 1 1 14.89 30.66 A21 21 0 1 0 58.01 27.65 Z"/>
+    <path fill="#d3dae3" d="M28 52 C17 42 16 20 62 2 C51 9 43 16 39 25 C46 22 52 22 56 23 C44 28 34 36 28 52 Z"/>
+    <g fill="#5294e2">
+      <rect x="2" y="30" width="9" height="3.4" rx="1.7"/>
+      <rect x="4" y="36.5" width="7" height="3.4" rx="1.7"/>
+      <rect x="6.5" y="43" width="4.5" height="3.4" rx="1.7"/>
+    </g>
+  </g>
+</svg>

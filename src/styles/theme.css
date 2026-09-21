@@ -1,0 +1,165 @@
+/*
+ * FlickOS site theme — Arc-Dark / Arc-Light mapped onto Starlight variables.
+ * Palette source: flickos/tools/check-palette.py
+ */
+
+:root,
+::backdrop {
+	--flick-bg: #383c4a;
+	--flick-base: #404552;
+	--flick-panel: #2f343f;
+	--flick-border: #2b2e39;
+	--flick-fg: #d3dae3;
+	--flick-title: #cfdae7;
+	--flick-accent: #5294e2;
+	--flick-accent-fg: #ffffff;
+	--flick-warning: #f27835;
+	--flick-error: #fc4138;
+	--flick-success: #73d216;
+	--flick-muted: #90939b;
+	--flick-link: #a9caf1;
+
+	--sl-font: "IBM Plex Sans", "Segoe UI", sans-serif;
+	--sl-font-system: var(--sl-font);
+	--sl-color-accent-low: #2a4a6e;
+	--sl-color-accent: #5294e2;
+	--sl-color-accent-high: #a9caf1;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #d3dae3;
+	--sl-color-gray-2: #cfdae7;
+	--sl-color-gray-3: #90939b;
+	--sl-color-gray-4: #404552;
+	--sl-color-gray-5: #383c4a;
+	--sl-color-gray-6: #2f343f;
+	--sl-color-black: #2b2e39;
+	--sl-color-bg: #383c4a;
+	--sl-color-bg-nav: #2f343f;
+	--sl-color-bg-sidebar: #2f343f;
+	--sl-color-bg-inline-code: #404552;
+	--sl-color-hairline: #2b2e39;
+	--sl-color-hairline-light: #404552;
+	--sl-color-text: #d3dae3;
+	--sl-color-text-accent: #a9caf1;
+}
+
+:root[data-theme="light"],
+[data-theme="light"] ::backdrop {
+	--flick-bg: #f5f6f7;
+	--flick-base: #ffffff;
+	--flick-panel: #e7e8eb;
+	--flick-border: #dcdfe3;
+	--flick-fg: #5c616c;
+	--flick-title: #525d76;
+	--flick-accent: #5294e2;
+	--flick-accent-fg: #ffffff;
+	--flick-warning: #f27835;
+	--flick-error: #fc4138;
+	--flick-success: #73d216;
+	--flick-muted: #90939b;
+	--flick-link: #2679db;
+
+	--sl-color-accent-low: #d6e6f8;
+	--sl-color-accent: #5294e2;
+	--sl-color-accent-high: #2679db;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #5c616c;
+	--sl-color-gray-2: #525d76;
+	--sl-color-gray-3: #90939b;
+	--sl-color-gray-4: #dcdfe3;
+	--sl-color-gray-5: #e7e8eb;
+	--sl-color-gray-6: #f5f6f7;
+	--sl-color-black: #383c4a;
+	--sl-color-bg: #f5f6f7;
+	--sl-color-bg-nav: #e7e8eb;
+	--sl-color-bg-sidebar: #e7e8eb;
+	--sl-color-bg-inline-code: #e7e8eb;
+	--sl-color-hairline: #dcdfe3;
+	--sl-color-hairline-light: #e7e8eb;
+	--sl-color-text: #5c616c;
+	--sl-color-text-accent: #2679db;
+}
+
+/* Prefer dark by default to match the OS. */
+html:not([data-theme]) {
+	color-scheme: dark;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+/* Marketing surface helpers (used outside Starlight chrome). */
+.flick-shell {
+	min-height: 100vh;
+	background:
+		radial-gradient(ellipse 80% 50% at 50% -10%, rgba(82, 148, 226, 0.18), transparent 55%),
+		linear-gradient(180deg, var(--flick-panel) 0%, var(--flick-bg) 28%, var(--flick-bg) 100%);
+	color: var(--flick-fg);
+	font-family: var(--sl-font);
+}
+
+.flick-display {
+	font-family: "Outfit", "IBM Plex Sans", sans-serif;
+	letter-spacing: -0.02em;
+}
+
+.flick-shell a:not(.flick-btn) {
+	color: var(--flick-link);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.15em;
+}
+
+.flick-shell a:not(.flick-btn):hover {
+	color: var(--flick-accent);
+}
+
+@keyframes flick-rise {
+	from {
+		opacity: 0;
+		transform: translateY(1.25rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes flick-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes flick-hero-scale {
+	from {
+		opacity: 0;
+		transform: scale(1.03);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.flick-anim-rise {
+	animation: flick-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.flick-anim-fade {
+	animation: flick-fade 0.9s ease both;
+}
+
+.flick-anim-hero {
+	animation: flick-hero-scale 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.flick-anim-rise,
+	.flick-anim-fade,
+	.flick-anim-hero {
+		animation: none;
+	}
+}

@@ -1,0 +1,76 @@
+---
+import Analytics from '@vercel/analytics/astro';
+import '../styles/global.css';
+import '../styles/theme.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+interface Props {
+	title: string;
+	description?: string;
+	ogImage?: string;
+}
+
+const {
+	title,
+	description = 'FlickOS 2.0 — a lightweight Debian 13 Wayland desktop with live ISO and Calamares installer.',
+	ogImage = 'https://flickos.net/og-image.png',
+} = Astro.props;
+
+const fullTitle = title === 'FlickOS' ? title : `${title} · FlickOS`;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{fullTitle}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="FlickOS" />
+		<meta property="og:title" content={fullTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={new URL(Astro.url.pathname, Astro.site).href} />
+		<meta property="og:image" content={ogImage} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={fullTitle} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body class="flick-shell">
+		<a class="skip-link" href="#main">Skip to content</a>
+		<SiteHeader />
+		<main id="main">
+			<slot />
+		</main>
+		<SiteFooter />
+		<Analytics />
+	</body>
+</html>
+
+<style is:global>
+	.skip-link {
+		position: absolute;
+		left: -9999px;
+		top: 0.5rem;
+		z-index: 100;
+		background: var(--flick-accent);
+		color: var(--flick-accent-fg);
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.25rem;
+	}
+	.skip-link:focus {
+		left: 0.5rem;
+	}
+</style>
