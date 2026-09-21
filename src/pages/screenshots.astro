@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import MarketingLayout from '../layouts/MarketingLayout.astro';
-import redmond from '../assets/screenshots/layout-redmond.png';
+import redmond from '../assets/screenshots/og-image.png';
 import cupertino from '../assets/screenshots/layout-cupertino.png';
 import traditional from '../assets/screenshots/layout-traditional.png';
 import chooser from '../assets/screenshots/layout-chooser.png';
@@ -130,6 +130,12 @@ const layouts = [
 		height: auto;
 		display: block;
 		border: 1px solid var(--flick-border);
+	}
+	/* Keep layout tiles equal even if a capture has a mismatched aspect ratio. */
+	.trio img {
+		aspect-ratio: 16 / 10;
+		object-fit: cover;
+		object-position: top center;
 	}
 	.trio h3,
 	.pair h3 {

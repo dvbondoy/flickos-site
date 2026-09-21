@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import MarketingLayout from '../layouts/MarketingLayout.astro';
-import hero from '../assets/screenshots/layout-redmond.png';
+import hero from '../assets/screenshots/og-image.png';
 import cupertino from '../assets/screenshots/layout-cupertino.png';
 import traditional from '../assets/screenshots/layout-traditional.png';
 
@@ -345,6 +345,9 @@ const keys = [
 		height: auto;
 		display: block;
 		border: 1px solid var(--flick-border);
+		aspect-ratio: 16 / 10;
+		object-fit: cover;
+		object-position: top center;
 	}
 	.layout-grid h3 {
 		margin: 0.75rem 0 0.25rem;
