@@ -7,17 +7,26 @@ import traditional from '../assets/screenshots/layout-traditional.png';
 import chooser from '../assets/screenshots/layout-chooser.png';
 import styleDark from '../assets/screenshots/style-dark.png';
 import styleLight from '../assets/screenshots/style-light.png';
+import tilingGrid from '../assets/screenshots/tiling-grid.png';
+import tilingColumns from '../assets/screenshots/tiling-columns.png';
+import tilingMasterStack from '../assets/screenshots/tiling-master-stack.png';
 
 const layouts = [
 	{ title: 'Redmond', image: redmond, caption: 'Default bottom panel with window list and tray.' },
 	{ title: 'Cupertino', image: cupertino, caption: 'Top bar and centered dock.' },
 	{ title: 'Traditional', image: traditional, caption: 'Top panel and bottom window list.' },
 ];
+
+const tiling = [
+	{ title: 'Grid', image: tilingGrid, caption: 'Even grid of tiled windows.' },
+	{ title: 'Columns', image: tilingColumns, caption: 'Side-by-side column arrangement.' },
+	{ title: 'Master stack', image: tilingMasterStack, caption: 'One primary window with a stacked side.' },
+];
 ---
 
 <MarketingLayout
 	title="Screenshots"
-	description="FlickOS 2.0 layouts, dark and light styles, and the layout chooser — captured from a live QEMU session."
+	description="FlickOS 2.0 layouts, window tiling, dark and light styles, and the layout chooser — captured from a live QEMU session."
 >
 	<section class="page">
 		<header class="page-head flick-anim-rise">
@@ -35,6 +44,31 @@ const layouts = [
 								<Image
 									src={item.image}
 									alt={`FlickOS ${item.title} layout`}
+									widths={[480, 800, 1200]}
+									sizes="(max-width: 900px) 100vw, 33vw"
+								/>
+							</div>
+							<h3>{item.title}</h3>
+							<p>{item.caption}</p>
+						</li>
+					))
+				}
+			</ul>
+		</section>
+
+		<section class="block" id="tiling">
+			<h2 class="flick-display">Window tiling</h2>
+			<p class="intro">
+				flick-tiler is off by default. Super+T toggles it; Super+M cycles arrangements.
+			</p>
+			<ul class="trio">
+				{
+					tiling.map((item) => (
+						<li>
+							<div class="shot">
+								<Image
+									src={item.image}
+									alt={`FlickOS window tiling — ${item.title}`}
 									widths={[480, 800, 1200]}
 									sizes="(max-width: 900px) 100vw, 33vw"
 								/>

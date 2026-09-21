@@ -25,6 +25,8 @@ const features = [
 	{
 		title: 'Optional tiling',
 		body: 'flick-tiler is off by default. Super+T toggles it; Super+M cycles arrangements.',
+		href: '/screenshots/#tiling',
+		linkLabel: 'See tiling screenshots',
 	},
 	{
 		title: 'Ready to use',
@@ -124,6 +126,11 @@ const keys = [
 					<li>
 						<h3>{f.title}</h3>
 						<p>{f.body}</p>
+						{'href' in f && f.href ? (
+							<p class="feature-link">
+								<a href={f.href}>{f.linkLabel}</a>
+							</p>
+						) : null}
 					</li>
 				))
 			}
@@ -330,6 +337,11 @@ const keys = [
 		line-height: 1.5;
 		color: var(--flick-fg);
 		opacity: 0.9;
+	}
+	.feature-link {
+		margin-top: 0.5rem !important;
+		opacity: 1 !important;
+		font-size: 0.95rem;
 	}
 	.layout-grid {
 		list-style: none;
