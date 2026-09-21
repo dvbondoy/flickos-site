@@ -1,6 +1,10 @@
 /*
  * FlickOS site theme — Arc-Dark / Arc-Light mapped onto Starlight variables.
  * Palette source: flickos/tools/check-palette.py
+ *
+ * Starlight names (white / gray-* / black) are relative lightness in *dark* mode.
+ * In light mode those tokens are inverted: --sl-color-white is dark text,
+ * --sl-color-black is the light page background.
  */
 
 :root,
@@ -21,6 +25,8 @@
 
 	--sl-font: "IBM Plex Sans", "Segoe UI", sans-serif;
 	--sl-font-system: var(--sl-font);
+
+	/* Arc-Dark → Starlight dark tokens */
 	--sl-color-accent-low: #2a4a6e;
 	--sl-color-accent: #5294e2;
 	--sl-color-accent-high: #a9caf1;
@@ -40,6 +46,7 @@
 	--sl-color-hairline-light: #404552;
 	--sl-color-text: #d3dae3;
 	--sl-color-text-accent: #a9caf1;
+	--sl-color-text-invert: #2a4a6e;
 }
 
 :root[data-theme="light"],
@@ -58,30 +65,41 @@
 	--flick-muted: #90939b;
 	--flick-link: #2679db;
 
+	/* Arc-Light → Starlight light tokens (inverted naming) */
 	--sl-color-accent-low: #d6e6f8;
 	--sl-color-accent: #5294e2;
 	--sl-color-accent-high: #2679db;
-	--sl-color-white: #ffffff;
-	--sl-color-gray-1: #5c616c;
-	--sl-color-gray-2: #525d76;
+	--sl-color-white: #383c4a;
+	--sl-color-gray-1: #525d76;
+	--sl-color-gray-2: #5c616c;
 	--sl-color-gray-3: #90939b;
 	--sl-color-gray-4: #dcdfe3;
 	--sl-color-gray-5: #e7e8eb;
 	--sl-color-gray-6: #f5f6f7;
-	--sl-color-black: #383c4a;
+	--sl-color-gray-7: #ffffff;
+	--sl-color-black: #ffffff;
 	--sl-color-bg: #f5f6f7;
-	--sl-color-bg-nav: #e7e8eb;
+	--sl-color-bg-nav: #ffffff;
 	--sl-color-bg-sidebar: #e7e8eb;
 	--sl-color-bg-inline-code: #e7e8eb;
 	--sl-color-hairline: #dcdfe3;
 	--sl-color-hairline-light: #e7e8eb;
 	--sl-color-text: #5c616c;
 	--sl-color-text-accent: #2679db;
+	--sl-color-text-invert: #ffffff;
 }
 
-/* Prefer dark by default to match the OS. */
+/* Prefer dark by default to match the OS (before ThemeProvider runs). */
 html:not([data-theme]) {
 	color-scheme: dark;
+}
+
+:root[data-theme="dark"] {
+	color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
 }
 
 html {

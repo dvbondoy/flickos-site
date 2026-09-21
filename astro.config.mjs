@@ -68,6 +68,8 @@ export default defineConfig({
 			],
 			components: {
 				SiteTitle: './src/components/starlight/SiteTitle.astro',
+				ThemeProvider: './src/components/starlight/ThemeProvider.astro',
+				ThemeSelect: './src/components/starlight/ThemeSelect.astro',
 			},
 		}),
 		sitemap(),
