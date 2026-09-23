@@ -19,7 +19,10 @@ the FlickOS desktop. Everything is in `packages/flickos-desktop/debian/control`.
 
 - **`Depends:`** packages the session can't work without (labwc, waybar,
   PipeWire, portals, polkit, NetworkManager, `flickos-settings`,
-  `flickos-archive-keyring`, …).
+  `flickos-archive-keyring`, …). Also `systemd-timesyncd`: systemd only
+  *recommends* a time daemon, so without it installed systems never set their
+  clock from the network; and `xdg-terminal-exec`, which Super+Enter and the
+  menu run.
 - **`Recommends:`** apps and tools users may reasonably remove (foot, fuzzel,
   pcmanfm, htop, nano, …).
 
@@ -50,13 +53,14 @@ Default desktop configuration:
 
 | File in package | Installed to | Purpose |
 |---|---|---|
-| `usr/bin/flickos-session` | `/usr/bin/` | Starts the session: config directories, desktop layout overlay (`flickos-layout prepare`), keyboard layout, `exec labwc`. Run by the login screen and by the tty1 script |
+| `usr/bin/flickos-session` | `/usr/bin/` | Starts the session: config directories, input settings (`flickos-control prepare`), desktop layout overlay (`flickos-layout prepare`), keyboard layout, `exec labwc`. Run by the login screen and by the tty1 script |
 | `etc/profile.d/95-flickos-session.sh` | `/etc/profile.d/` | On tty1 login (live autologin, text login) runs `flickos-session` |
 | `usr/share/wayland-sessions/flickos.desktop` | same | The session for other display managers |
 | `etc/xdg/labwc/rc.xml`, `menu.xml`, `environment` | `/etc/xdg/labwc/` | Keybindings, root menu, cursor |
 | `etc/xdg/labwc/autostart` | `/etc/xdg/labwc/` | Calls `/usr/libexec/flickos/autostart` |
-| `usr/libexec/flickos/autostart` | `/usr/libexec/flickos/` | Starts wallpaper (`flickos-layout wallpaper`), panel (`flickos-layout panel`), notifications, applets, idle lock |
-| `etc/xdg/flickos/` | `/etc/xdg/flickos/` | foot, fuzzel and default-app (`mimeapps.list`) config |
+| `usr/libexec/flickos/autostart` | `/usr/libexec/flickos/` | Starts wallpaper (`flickos-layout wallpaper`), panel (`flickos-layout panel`), notifications, applets, idle lock (`flickos-control idle`, else a fixed swayidle) |
+| `usr/libexec/flickos/open-default` | `/usr/libexec/flickos/` | `browser` or `files`: starts the user's default app (`xdg-mime query default`, then `gio launch`), else `x-www-browser` or `pcmanfm`. Super+B, Super+E and the menu |
+| `etc/xdg/flickos/` | `/etc/xdg/flickos/` | foot, fuzzel and default-app config: `mimeapps.list`, and `xdg-terminals.list` (foot, for `xdg-terminal-exec`) |
 | `usr/share/flickos/` | `/usr/share/flickos/` | waybar and mako config |
 | `usr/share/backgrounds/flickos/default.jpg` | same | Wallpaper for layouts without their own, and without flickos-layouts |
 | `usr/share/glib-2.0/schemas/90_flickos-settings.gschema.override` | same | GTK theme (Arc-Dark), icons (Numix-Circle), fonts, dark mode |
@@ -90,7 +94,7 @@ the chosen layout and style at login and live (see
 
 | File in package | Installed to | Purpose |
 |---|---|---|
-| `usr/bin/flickos-layout` | `/usr/bin/` | Python 3 tool: `list`, `current`, `set`, `style list/current/set`, `clicks list/current/set`, `prepare`, `panel`, `wallpaper`, `doctor`, `pick` (chooser), `first-run` |
+| `usr/bin/flickos-layout` | `/usr/bin/` | Python 3 tool: `list`, `current`, `set`, `style list/current/set`, `clicks list/current/set`, `prepare`, `panel`, `supervise`, `wallpaper`, `doctor`, `pick` (chooser), `first-run` |
 | `usr/share/flickos/layouts/ID/` | same | One folder per layout (`redmond`, `cupertino`, `traditional`): `layout.ini`, `waybar.jsonc`, `style.css`, `preview.png`, `wallpaper.jpg` |
 | `debian/links` | `/usr/share/backgrounds/flickos/ID.jpg` | Links to the layouts' wallpapers, for waypaper |
 | `usr/share/flickos/layouts/common/` | same | `modules.jsonc` and `base.css`, shared by every layout |
@@ -125,6 +129,13 @@ the chosen layout and style at login and live (see
   `gio launch` (clicks on those icons).
 - **It depends on `sfwbar`** (`+flickos3` or later, which has the `running`
   class and `sensor_maximized`) for the Cupertino dock.
+- **It merges other programs' labwc fragments** into the rc.xml overlay
+  (`FRAGMENTS`, in this order): flickos-control's `control/labwc.xml`
+  (`<libinput>` device categories, appended after the system rc.xml's, and
+  `<keyboard>` options) and flick-tiler's `tiler/labwc.xml`. For
+  flickos-control's `control/environment` (the keyboard layout) it writes an
+  overlay `labwc/environment`: the system one's lines (and its `environment.d/`),
+  then the fragment's, since labwc reads only the first environment file it finds.
 - **It depends on `python3-gi` and `gir1.2-gtk-3.0`** for the chooser window.
   GTK 3 follows the Arc theme. zenity (GTK 4/libadwaita) was rejected because
   libadwaita ignores Arc and would add about 12 MB. Both packages were already in
@@ -203,10 +214,122 @@ it needs no bindings.
 - **Depends on flickos-layouts (>= 1.8)**, whose `flickos-layout reconfigure`
   merges the tiling fragment into the rc.xml overlay, and flickos-settings
   (>= 1.11) for the Super+T binding and the autostart line.
+- **Commands for the Settings window** (flickos-control): `flick-tiler floating
+  list|add|remove PATTERN` changes the `Float=` list (the whole list goes into
+  the user's file, since it replaces the system one), `flick-tiler gap N` the
+  gap, and `status` also gives the main window width (`ratio`) and `gap`.
 - **A Depends of `flickos-desktop`** and in the sanity hook's `REQUIRED`.
 - **Unit tests** in `tests/` (arrangements, window bookkeeping, fragment, the
   Wayland client against a fake compositor), run at package build like
   flickos-layouts'.
+
+### `flickos-shortcuts`
+
+The keyboard shortcut sheet: hold Super on its own for `HOLD_MS` (0.7 s) and
+the session's shortcuts appear in the middle of the screen until Super is let
+go. Also *Settings → Keyboard Shortcuts* and the app launcher
+(`flickos-shortcuts show`, closes on any key or click). One Python 3 file,
+`usr/bin/flickos-shortcuts`, plus `usr/share/flickos/shortcuts/style.css`
+(Arc-Dark, in `tools/check-palette.py`).
+
+- **How it sees Super:** labwc 0.8 sends the modifier state to *every* client
+  with a keyboard, not only the focused one. The daemon keeps a bare Wayland
+  connection with a keyboard (standard library, like flick-tiler's) and reads
+  the `modifiers` events; nothing is bound in rc.xml. Other compositors
+  (sway, Mutter) don't do this, so the daemon only works on labwc.
+- **The sheet** is a GTK 3 layer-shell surface (gtk-layer-shell) on the
+  overlay layer. It takes no keyboard focus and lets clicks through, so the
+  shortcuts keep working while it is shown.
+- **What it lists:** the keybinds of the rc.xml labwc uses (first of
+  `$XDG_CONFIG_HOME`, then `$XDG_CONFIG_DIRS`: a user's own, the flickos-layouts
+  overlay with flick-tiler's keys while tiling is on, or flickos-settings'),
+  plus labwc's built-in ones (`DEFAULT_KEYBINDS`) with `<default />`. Read
+  again every time it is shown. Descriptions come from `COMMANDS` and
+  `ACTIONS`; media, volume and brightness keys are left out.
+- **Started by** flickos-settings' autostart (`flickos-shortcuts daemon`, one
+  per session: `$XDG_RUNTIME_DIR/flickos/shortcuts.lock`).
+- **A Depends of `flickos-desktop`** and in the sanity hook's `REQUIRED`.
+- **Unit tests** in `tests/` (rc.xml reading, descriptions, the hold timing,
+  the Wayland client against a fake compositor), run at package build.
+
+### `flickos-control`
+
+The Settings window (*Settings → All Settings*, or `flickos-control` in the
+app launcher): one window with a sidebar of pages, and the owner of the mouse,
+touchpad, keyboard and idle settings. One Python 3 file,
+`usr/bin/flickos-control`, GTK 3 through python3-gi with no CSS of its own, so
+it follows the Dark or Light style. Design and decisions:
+[design/flickos-control.md](/docs/design/flickos-control/).
+
+- **Pages:** *Desktop Layout & Style* (layout with previews, style, desktop
+  clicks), *Mouse & Touchpad*, *Keyboard* (layout and variant, repeat, Num
+  Lock, and the system layout), *Default Applications* (browser, file
+  manager, text editor, image and document viewer, media player through
+  `xdg-mime default`; the terminal through `~/.config/xdg-terminals.list`),
+  *Power & Idle* (lock and sleep times), *Date & Time* (time zone and network
+  time through `timedatectl`, which asks for the password; night-light is
+  restarted for the new time zone), *Login* (log in automatically; only on
+  installed systems with flickos-greeter), *Tiling* (on/off, arrangement, main window width, gap, apps that
+  always float), *Keyboard Shortcuts* (the list, and a button for the sheet) and
+  *More Settings* (tiles that start Wallpaper, Appearance, Displays, Network,
+  Sound, Bluetooth, Printers and Software Updates; a tile is hidden when its app
+  isn't installed) and *About* (FlickOS version from `/usr/lib/flickos-release`,
+  Debian, Linux, computer, processor, memory, graphics via `lspci`, disk,
+  desktop; *Copy System Info* puts the same text plus the FlickOS packages'
+  versions on the clipboard with `wl-copy`, and *Report a Problem* opens the
+  GitHub issues).
+- **Its own settings** (`SETTINGS`): touchpad (`tap`, natural scrolling,
+  disable while typing, pointer speed, click method), mouse (left-handed,
+  natural scrolling, pointer speed, acceleration) and keyboard (repeat delay and
+  rate, Num Lock, layout, variant). `flickos-control set KEY VALUE` saves one in
+  `~/.config/flickos/input` or `keyboard` (system defaults: the conffiles
+  `/etc/xdg/flickos/input.conf` and `keyboard.conf`, all commented out),
+  writes `$XDG_RUNTIME_DIR/flickos/control/labwc.xml` and `environment`, and runs
+  `flickos-layout reconfigure`. `get` lists them. `prepare` writes the two files
+  at login (flickos-session runs it before `flickos-layout prepare`). labwc
+  never resets an option that disappears from its config, so a value once set
+  stays written, and `set KEY default` stores the default rather than
+  removing it. Only keys labwc 0.8.3 parses are used; the tests hold its list.
+- **Idle:** `flickos-control idle` (run by autostart, not in the live session)
+  execs swayidle with the chosen times (`idle.lock-after`,
+  `idle.suspend-after`; `~/.config/flickos/idle`, system defaults in the
+  conffile `/etc/xdg/flickos/idle.conf`) and `FLICKOS_IDLE=1` in its
+  environment. A change stops FlickOS's swayidle (that mark, or autostart's
+  old fixed lock command) and starts a new one; a user's own swayidle is left
+  alone.
+- **The system keyboard layout** (login screen, console, new accounts) is
+  `/etc/default/keyboard`. Debian's systemd forbids changing it through
+  `localectl`, so the Keyboard page runs `pkexec
+  /usr/libexec/flickos/control-helper keyboard MODEL LAYOUT VARIANT OPTIONS`:
+  polkit action `org.flickos.control.keyboard`
+  (`usr/share/polkit-1/actions/org.flickos.control.policy`, one action per verb
+  via `exec.argv1`, admin password). The helper checks every value against
+  xkb-data's `evdev.lst`, rewrites only the `XKB*` lines, runs `udevadm trigger`
+  and `setupcon --save-only -k`. The same helper has `autologin-on` and
+  `autologin-off` (actions `org.flickos.control.autologin-on`/`-off`): for
+  the user who ran pkexec (`PKEXEC_UID`, a regular account) only, it makes
+  them the only member of group `autologin` (`gpasswd -M`), or takes them out.
+- **For the other settings it owns nothing.** Each page runs the command that owns the setting,
+  the same one a user could type: `flickos-layout list|current|set`, `style …`,
+  `clicks …` and `doctor` (its warnings are shown on the page),
+  `flick-tiler status|modes|on|off|mode|ratio|gap|floating`, `flickos-shortcuts
+  list|show`. Changes run in the background (`Gio.Subprocess`), so the window
+  never blocks, and the page shows what the command printed. Pages read the
+  state again when shown: Super+T, the panel or the chooser may have changed it.
+- **Commands:** `flickos-control [--page ID]` opens the window (one per
+  session: `$XDG_RUNTIME_DIR/flickos/control.lock`), `flickos-control list`
+  prints the page ids, `flickos-control about` prints the system information
+  (the text *Copy System Info* copies).
+- **Depends on** flickos-layouts (>= 1.13, which merges its fragment and
+  writes the environment overlay), flick-tiler (>= 1.3, for `floating`, `gap`
+  and the width in `status`), flickos-shortcuts, `pkexec` and `xkb-data` for
+  the helper, and `xdg-utils` for default apps.
+- **A Depends of `flickos-desktop`** and in the sanity hook's `REQUIRED`.
+- **Unit tests** in `tests/` (reading the commands' output, tiles, the command
+  line, the lock, the settings and fragments against labwc 0.8.3's key list,
+  the helper), run at package build. The boot test opens the window on each
+  page and saves screenshots (`boot-test/control-*.png`), and applies a
+  touchpad option and a layout live.
 
 ### `flickos-greeter`
 

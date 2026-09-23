@@ -16,6 +16,7 @@ menu, boot splash, OS name and firewall.
 - [Window tiling](#window-tiling)
 - [Wallpaper](#wallpaper)
 - [Default apps](#default-apps)
+- [Settings window](#settings-window)
 - [Menu entries](#menu-entries)
 - [Keybindings](#keybindings)
 - [Program defaults](#program-defaults)
@@ -155,8 +156,9 @@ on tty1 only.
 | `blueman-applet` | Bluetooth tray icon | Only if installed **and** a Bluetooth adapter exists (`/sys/class/bluetooth` not empty). It's a Python process, so it isn't started needlessly. A USB adapter plugged in later appears after the next login |
 | `wl-paste --watch cliphist store` | Clipboard history (`Super+V`) | Only if installed |
 | `/usr/libexec/flickos/night-light` | Warmer screen colors at night | Runs `wlsunset` with the coordinates of the system time zone's city (from tzdata's `zone1970.tab`, offline). No time zone set (e.g. UTC in the live session) → fixed times 18:30–06:30 |
+| `flickos-shortcuts daemon` | Keyboard shortcut sheet while Super is held | Only if installed ([Shortcut sheet](#shortcut-sheet-hold-super)) |
 | `flickos-layout first-run` | Desktop Layout & Style chooser at the first login of a new account | Only if flickos-layouts is installed; never in the live session ([First login](#first-login)) |
-| `swayidle` | Lock after 5 min idle, suspend after 15 | **Not in the live session**, so installs are never interrupted |
+| `flickos-control idle` (swayidle) | Lock and suspend after the times in *Settings → Power & Idle* (default 5 and 15 min); a fixed swayidle without flickos-control | **Not in the live session**, so installs are never interrupted |
 
 **To add a startup program**, add a line to
 `packages/flickos-settings/usr/libexec/flickos/autostart`. End it with `&`
@@ -361,6 +363,34 @@ If anything goes wrong while generating (a JSON syntax error, a missing
 and `set` keeps the old panel and exits with 1. A dock that can't be generated
 is left out (`panel` warns, `set` exits with 1); the bars still start.
 
+### Keeping the panel running
+
+autostart runs `flickos-layout panel` once, so nothing would bring waybar, mako
+or the dock back if one of them exited by itself — and waybar does exit when an
+output changes under it, which happens in the first seconds of a session in a VM
+or with a second monitor. Each of them therefore runs under a supervisor,
+`flickos-layout supervise -- COMMAND …`: `panel` itself is waybar's, and mako's
+and the dock's are started with `setsid -f`. `set` starts the new panel and dock
+the same way.
+
+The supervisor restarts a program that failed after 1 s, doubling the wait up to
+8 s, and gives up after `RESTART_LIMIT` (5) failures in a row; one that ran for
+`RESTART_HEALTHY_SECONDS` (60) starts counting from zero again. It does **not**
+restart a program that was meant to end: one that exited 0, one that was killed
+(how `set` stops the old panel), or any of them once the Wayland socket is gone.
+
+Everything they print, and every restart, goes to
+**`$XDG_RUNTIME_DIR/flickos/panel.log`** (truncated when it passes 256 KB). The
+session's stderr is labwc's, which nobody can read after login, so that file is
+the only trace a failed panel leaves; [07](/docs/07-troubleshooting/#live-session--installed-system)
+has the symptoms.
+
+The same reasoning applies to the lock the layout commands share
+(`$XDG_RUNTIME_DIR/flickos/layout.lock`): autostart starts `wallpaper`, `panel`,
+`first-run` and the tiler daemon at once, so waiting for it is given up after 10
+seconds (`LOCK_SECONDS`) with a warning, and the command carries on without it.
+A sibling that hangs costs a warning, never the panel.
+
 ### Commands
 
 | Command | Does |
@@ -372,7 +402,8 @@ is left out (`panel` warns, `set` exits with 1); the bars still start.
 | `flickos-layout clicks list`, `clicks current`, `clicks set ID` | The same for [desktop clicks](#desktop-clicks) |
 | `flickos-layout wallpaper` | Shows the [wallpaper](#wallpaper) (autostart): `waypaper --restore` if the user chose one there, else swaybg with `~/.config/flickos/wallpaper`, the layout's or the default wallpaper. If waypaper fails, the layout's |
 | `flickos-layout prepare` | Regenerates the overlay (`xdg/`). Run by the session script at login, before labwc starts |
-| `flickos-layout panel` | Starts mako with the generated notification config, generates the panel files, starts the layout's dock (sfwbar), then replaces itself with waybar (autostart). If anything goes wrong it starts flickos-settings' default panel and notification config. A user's own waybar or mako config is used as is |
+| `flickos-layout panel` | Starts mako with the generated notification config, generates the panel files, starts the layout's dock (sfwbar), then stays on as waybar's [supervisor](#keeping-the-panel-running) (autostart). If anything goes wrong it starts flickos-settings' default panel and notification config. A user's own waybar or mako config is used as is |
+| `flickos-layout supervise -- COMMAND …` | Runs one panel program and restarts it when it fails. Started by `panel` and `set`, not meant to be typed |
 | `flickos-layout doctor` | Lists user config that stops a layout or style from applying. Exit code 1 if it finds any |
 | `flickos-layout pick` | Opens the [chooser](#the-chooser) |
 | `flickos-layout first-run` | Opens the chooser if this is a new account's [first login](#first-login). Run by autostart |
@@ -891,6 +922,7 @@ Current defaults (all in `Recommends:`):
 | Purpose | Package | Desktop file |
 |---|---|---|
 | Web browser | `firefox-esr` | `firefox-esr.desktop` |
+| Ad blocker for Firefox (on by default) | `webext-ublock-origin-firefox` | none |
 | Text editor | `mousepad` | `org.xfce.mousepad.desktop` |
 | Image viewer | `ristretto` | `org.xfce.ristretto.desktop` |
 | PDF viewer | `evince` | `org.gnome.Evince.desktop` |
@@ -904,6 +936,7 @@ Current defaults (all in `Recommends:`):
 | Sound settings | `pavucontrol` | `org.pulseaudio.pavucontrol.desktop` |
 | Bluetooth | `blueman` | `blueman-manager.desktop` |
 | Printers | `cups`, `system-config-printer` | `system-config-printer.desktop` |
+| Software manager and updates | `gnome-packagekit`, `gnome-package-updater` | `org.gnome.Packages.desktop`, `org.gnome.PackageUpdater.desktop` |
 | CPU microcode (no app) | `intel-microcode`, `amd64-microcode` | – |
 
 **Check the cost before adding an app.** A small app can pull in large
@@ -924,7 +957,11 @@ boot test's `memory.txt` shows memory use ([02](/docs/02-building-and-testing/#r
 2. `flickos-settings/etc/xdg/flickos/mimeapps.list`: replace the desktop file name.
 3. `flickos-settings/etc/xdg/labwc/menu.xml`, `rc.xml` and
    `flickos-installer/etc/xdg/flickos-live/labwc/menu.xml`: only if the app is
-   called by name. The browser is called as `x-www-browser`, so it needs no change there.
+   called by name. The terminal, browser and file manager are not: Super+Enter
+   and the menu run `xdg-terminal-exec` (FlickOS's default:
+   `flickos-settings/etc/xdg/flickos/xdg-terminals.list`), Super+B and Super+E
+   run `/usr/libexec/flickos/open-default browser|files`, which start the
+   `mimeapps.list` default. A new terminal needs only a line in `xdg-terminals.list`.
 
 Find a package's desktop file name: `dpkg -L PACKAGE | grep '\.desktop$'`.
 
@@ -943,13 +980,63 @@ image/png=org.xfce.ristretto.desktop
 - Only reference apps that are installed. Other entries are ignored.
 - Users override with `~/.config/mimeapps.list`.
 
+Users choose their own in *Settings → Default Applications*, which writes
+`~/.config/mimeapps.list` (`xdg-mime default`) and `~/.config/xdg-terminals.list`.
+
 ### Default terminal and browser alternatives
 
-Programs asking the system for "a terminal" (pcmanfm's *Open in Terminal*, via
+FlickOS's own keys, menu and launcher use the user's choice (above). Other
+programs asking the system for "a terminal" (pcmanfm's *Open in Terminal*, via
 libfm's `terminal=x-terminal-emulator %s`) or "a browser" (`x-www-browser`) use
-Debian's *alternatives*. foot and firefox-esr register themselves for these.
+Debian's *alternatives*, which are system-wide. foot and firefox-esr register themselves for these.
 Check with `update-alternatives --display x-terminal-emulator` and
 `update-alternatives --display x-www-browser`.
+
+---
+
+## Settings window
+
+*Settings → All Settings* opens the Settings window (package `flickos-control`,
+see [04](/docs/04-packages/#flickos-control)). Every page runs the command that owns
+the setting, so the window, the panel, the keys and the command line always
+agree. Mouse, touchpad and keyboard settings are flickos-control's own.
+
+| Page | Runs |
+|---|---|
+| Desktop Layout & Style | `flickos-layout list/current/set`, `style …`, `clicks …`, `doctor` |
+| Mouse & Touchpad, Keyboard, Power & Idle | `flickos-control set KEY VALUE` (`flickos-control get` lists them); the system layout: `pkexec /usr/libexec/flickos/control-helper keyboard …` |
+| Default Applications | `xdg-mime default APP TYPES…`; the terminal: `~/.config/xdg-terminals.list` |
+| Date & Time | `timedatectl set-timezone`, `set-ntp` |
+| Login | `pkexec /usr/libexec/flickos/control-helper autologin-on`, `autologin-off` |
+| About | `flickos-control about` (also `lspci`, `dpkg-query`); *Copy System Info*: `wl-copy` |
+| Tiling | `flick-tiler status/modes/on/off/mode/ratio/gap/floating` |
+| Keyboard Shortcuts | `flickos-shortcuts list`, `show` |
+| More Settings | the apps in `TILES` (the same as the Settings menu) |
+
+- **Add a tile for another settings app:** a line in `TILES` in
+  `usr/bin/flickos-control` (id, name, icon names, command). Tiles of apps that
+  aren't installed are hidden, so a Recommends is enough. Add the app to the
+  Settings menu too (both files, see [Menu entries](#menu-entries)).
+- **Change the mouse, touchpad, keyboard or idle defaults for everyone:**
+  uncomment lines in `/etc/xdg/flickos/input.conf`, `keyboard.conf` or
+  `idle.conf` (conffiles of flickos-control). Users' own choices still win.
+- **Add a mouse, touchpad or keyboard option:** a `Setting` in `SETTINGS`
+  (labwc category and element, default) and a `control()` row on the page.
+  Check the element in labwc's `src/config/rcxml.c` first: labwc ignores what
+  it doesn't know, without a message. The tests compare every option against
+  their copy of labwc 0.8.3's list (`LABWC_LIBINPUT`, `LABWC_KEYBOARD`); add
+  it there if it is new in labwc.
+- **Add a page:** a class with `widget` and `shown()` (called each time the
+  page is shown) in `PAGE_CLASSES`, and a `Page` in `PAGES`. Read and change
+  the setting through the command that owns it; if that command lacks
+  something, add it there (that is how `flick-tiler floating` came about).
+  Use stock GTK widgets only: they follow both styles without CSS.
+- **Try it without building:** run `usr/bin/flickos-control --page ID` from the
+  source tree inside the session; set `FLICKOS_LAYOUT_PREFIX` to
+  `packages/flickos-layouts` to see the layout previews from the tree.
+
+The design and its decisions are in
+[design/flickos-control.md](/docs/design/flickos-control/).
 
 ---
 
@@ -1036,6 +1123,7 @@ bindings follow, and replace defaults that use the same key.
 
 | Key | Action | Source |
 |---|---|---|
+| Hold `Super` alone | Keyboard shortcut sheet until Super is let go ([Shortcut sheet](#shortcut-sheet-hold-super)) | FlickOS |
 | `Super+Enter` | Terminal (foot) | FlickOS |
 | `Super+D`, `Alt+F3` | App launcher (fuzzel); closes it when it is open | FlickOS |
 | `Super+E` | Files (pcmanfm) | FlickOS |
@@ -1080,6 +1168,29 @@ labwc's built-in bindings: no Alt+Tab, no snapping.
 
 A user with `~/.config/labwc/rc.xml` gets none of FlickOS's bindings or theme
 settings, because that file replaces the system one completely.
+
+### Shortcut sheet (hold Super)
+
+Holding Super on its own for 0.7 s shows the shortcuts until Super is let go
+(package `flickos-shortcuts`, see [04](/docs/04-packages/#flickos-shortcuts)). The
+sheet reads the rc.xml labwc uses, so a new binding shows up by itself. What it
+says about a binding:
+
+- **A command FlickOS knows** (`COMMANDS` in `flickos-shortcuts`: a regex on
+  the command, a section and a description). Add a line there when you add a
+  binding, or it shows as *Run PROGRAM* under *Other*.
+- **A labwc action** (`ACTIONS`): `Close`, `ToggleMaximize`, `SnapToEdge`, …
+  Unknown actions show their name (`ToggleDecorations` → *Toggle decorations*).
+- Keys with the same description share a row; `XF86…` keys are left out.
+
+Try it without building: `flickos-shortcuts list` prints what the sheet shows
+(`--file` for another rc.xml). The hold time is `HOLD_MS`, the look
+`usr/share/flickos/shortcuts/style.css` (Arc-Dark colors only).
+
+It can't tell a long press of Super alone from Super held while pressing
+other keys (labwc sends it only the modifiers), so holding Super through
+several shortcuts (Super+J, J, J with tiling) also shows the sheet. It lets
+keys and clicks through, so this only costs the view.
 
 ---
 
@@ -1218,6 +1329,9 @@ Keep them working, but they aren't what users normally see.
 - **Test in a VM:** `flickos-layout set ID` regenerates and restarts the panel.
   To see waybar's own errors (JSON or CSS syntax), run it in a terminal:
   `pkill waybar; waybar -c $XDG_RUNTIME_DIR/flickos/waybar/config.jsonc -s $XDG_RUNTIME_DIR/flickos/waybar/style.css`.
+  In a normal session waybar runs
+  [supervised](#keeping-the-panel-running) and everything it prints is in
+  `$XDG_RUNTIME_DIR/flickos/panel.log`.
 
 ### mako (notifications)
 
@@ -1227,7 +1341,9 @@ waybar: `flickos-layout panel` starts
 `usr/share/flickos/mako/config` (font, size, timeouts, Arc-Dark colors) and then
 the style's `mako.conf` (colors only). If that fails, it starts
 `mako -c /usr/share/flickos/mako/config`. A user's own `~/.config/mako/config`
-is used as is. Critical notifications have a red border and never time out. Test in a VM: `notify-send "Hello" "FlickOS"`, or
+is used as is. mako runs under the same
+[supervisor](#keeping-the-panel-running) as the panel, and logs to
+`$XDG_RUNTIME_DIR/flickos/panel.log` with it. Critical notifications have a red border and never time out. Test in a VM: `notify-send "Hello" "FlickOS"`, or
 `notify-send -u critical "Hello"`.
 
 ### GTK theme, icons, cursor, fonts, dark mode
@@ -1270,10 +1386,12 @@ is the same theme in Arc's light colors; the Light style selects it through the
 `rc.xml` overlay. Both files must have the same keys (`tools/check-palette.py`).
 
 It sets the title bars (Arc's `wm_bg`), title text (80 % / 50 % alpha, written
-`#cfdae7 80`), button icon colors, borders, the root and window menus (Arc's
+`#cfdae7cc`), button icon colors, borders, the root and window menus (Arc's
 white-on-blue selection), the Alt+Tab switcher and the window-snapping preview.
 
-- **Colors:** `#rrggbb` or `#rrggbb <alpha percent>`.
+- **Colors:** `#rrggbb` or `#rrggbbaa` (alpha in hex: `cc` = 80 %, `80` =
+  50 %). Openbox's `#rrggbb <alpha percent>` still works in labwc 0.8.3 but is
+  logged as deprecated at every start, so `tools/check-palette.py` rejects it.
 - **Keys:** only those listed in `man labwc-theme`. A misspelled key is silently
   ignored by labwc, so `tools/check-palette.py` checks every key against the list
   for labwc 0.8.3. When labwc gains keys in a newer version, add them there.

@@ -14,7 +14,7 @@ sidebar:
 | Look | **Arc-Dark** everywhere by default: GTK theme (arc-theme), Numix-Circle icons, and the same palette for panel, terminal, launcher, notifications, window borders, boot menus, boot splash and installer. A **Light** style (Arc, Numix-Circle-Light) recolors the desktop live; boot menus, splash and installer stay Arc-Dark. GTK details in *Settings → Appearance* (nwg-look). Translucent panel and terminal (no blur) |
 | Audio | PipeWire + WirePlumber |
 | Network | NetworkManager + nm-applet |
-| Apps | Firefox ESR, LibreOffice, VLC, Mousepad, Ristretto, Evince, Xarchiver; Bluetooth, printing, Flatpak (Flathub) |
+| Apps | Firefox ESR (with uBlock Origin), LibreOffice, VLC, Mousepad, Ristretto, Evince, Xarchiver, GNOME PackageKit (software manager); Bluetooth, printing, Flatpak (Flathub) |
 | Updates | Automatic security updates (unattended-upgrades) |
 | Security | Firewall (ufw) on by default: incoming blocked, outgoing allowed |
 | Branding | FlickOS boot menu, boot splash (Plymouth), `os-release` variant and login banner; `ID=debian` kept |
@@ -84,6 +84,8 @@ flickos/
 │   ├── flickos-settings/         Desktop config: session, keybindings, menu, panel, theme, wallpaper
 │   ├── flickos-layouts/          Desktop layouts, wallpapers + the flickos-layout tool (and its unit tests)
 │   ├── flick-tiler/              Opt-in window tiling on top of labwc (daemon + panel button)
+│   ├── flickos-shortcuts/        Keyboard shortcut sheet while Super is held (daemon + GTK sheet)
+│   ├── flickos-control/          The Settings window (pages over flickos-layout, flick-tiler, flickos-shortcuts)
 │   ├── flickos-greeter/          Login screen of installed systems (greetd + gtkgreet)
 │   ├── waypaper/                 Wallpaper picker (upstream waypaper, not in Debian trixie)
 │   ├── sfwbar/                   Auto-hide dock for Cupertino (upstream sfwbar, compiled; not in Debian trixie)
@@ -175,6 +177,9 @@ starts the same session.
 | Change the Dark/Light styles, or add a style | `packages/flickos-layouts/usr/share/flickos/styles/`, labwc themes in `packages/flickos-settings/usr/share/themes/` | [09](/docs/09-customizing/#styles-darklight) |
 | Change a layout's wallpaper, or the Wallpaper app (waypaper) | `packages/flickos-layouts/usr/share/flickos/layouts/ID/wallpaper.jpg`, `packages/waypaper/` | [09](/docs/09-customizing/#wallpaper) |
 | Change window tiling (arrangements, keys, apps that float) | `packages/flick-tiler/` (`MODES`, `KEYBINDS`, `etc/xdg/flickos/tiler.conf`), Super+T in `packages/flickos-settings/etc/xdg/labwc/rc.xml` | [09](/docs/09-customizing/#window-tiling) |
+| Change the hold-Super shortcut sheet (descriptions, hold time, look) | `packages/flickos-shortcuts/` (`COMMANDS`, `ACTIONS`, `HOLD_MS`, `usr/share/flickos/shortcuts/style.css`) | [09](/docs/09-customizing/#shortcut-sheet-hold-super) |
+| Change the Settings window (pages, tiles for other apps, mouse/touchpad/keyboard options) | `packages/flickos-control/usr/bin/flickos-control` (`PAGES`, `TILES`, `SETTINGS`); *All Settings* in both menus | [09](/docs/09-customizing/#settings-window) |
+| Change mouse, touchpad, keyboard or idle defaults for everyone | `packages/flickos-control/etc/xdg/flickos/input.conf`, `keyboard.conf`, `idle.conf` | [09](/docs/09-customizing/#settings-window) |
 | Change what a click on the desktop does | `flickos-layout` (`CLICKS`), `packages/flickos-settings/etc/xdg/labwc/rc.xml` (`<mouse>`) | [09](/docs/09-customizing/#desktop-clicks) |
 | Change the Desktop Layout & Style chooser or its previews | `packages/flickos-layouts/usr/bin/flickos-layout` (`pick`), `tools/make-layout-previews.sh` | [09](/docs/09-customizing/#the-chooser) |
 | Stop or change the chooser at a new account's first login | `packages/flickos-layouts/etc/skel/.config/flickos/choose-layout`, `flickos-layout first-run` | [09](/docs/09-customizing/#first-login) |

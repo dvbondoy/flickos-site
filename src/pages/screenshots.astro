@@ -119,12 +119,18 @@ const tiling = [
 	.page {
 		max-width: 72rem;
 		margin: 0 auto;
-		padding: 2.5rem 1.25rem 0;
+		padding: 1.75rem 1.25rem 0;
+	}
+	@media (min-width: 48rem) {
+		.page {
+			padding-top: 2.5rem;
+		}
 	}
 	.page-head h1 {
 		margin: 0;
-		font-size: clamp(2rem, 5vw, 2.75rem);
+		font-size: clamp(1.75rem, 7vw, 2.75rem);
 		color: var(--flick-title);
+		line-height: 1.15;
 	}
 	.page-head p {
 		margin: 0.6rem 0 0;

@@ -65,6 +65,12 @@ export default defineConfig({
 						{ label: 'Customizing', slug: 'docs/09-customizing' },
 					],
 				},
+				{
+					label: 'Design',
+					items: [
+						{ label: 'flickos-control', slug: 'docs/design/flickos-control' },
+					],
+				},
 			],
 			components: {
 				SiteTitle: './src/components/starlight/SiteTitle.astro',

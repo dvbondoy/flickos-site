@@ -212,6 +212,16 @@ The graphical session on tty1 didn't start. Look at `screen.png`, then boot
 with `tools/test-iso.sh`, switch to tty2 and investigate (see *Live session*
 below). PipeWire and waybar depend on labwc, so if labwc fails, those fail too.
 
+**`FAIL panel and notifications supervised, neither restarted`** (or *no panel
+program crashed during the layout and style switches*)
+A panel program failed at least once. The check prints the lines it found in
+`$XDG_RUNTIME_DIR/flickos/panel.log`, which say which program and why; the
+supervisor restarted it, so `screen.png` may well show a normal desktop. A
+failure that prints nothing is the other half of the check: waybar or mako is
+not a child of `flickos-layout`, so nothing would restart it (an older
+flickos-layouts in the image, or autostart starting waybar itself because
+flickos-layouts is missing).
+
 **`FAIL network reachable`**
 QEMU's user networking has no internet, e.g. a proxy or firewall in CI. It can
 also mean NetworkManager didn't configure the interface: check `nmcli` in a live session.
@@ -334,6 +344,34 @@ overrides it.
 **No network icon in the panel**
 nm-applet must run with `--indicator` (waybar's tray doesn't support old-style
 icons), and waybar's config must include `"tray"`. Check `pgrep -a nm-applet`.
+
+**No panel at all (no bar, but the wallpaper and the menu are there)**
+The panel, notifications and the dock run under a supervisor
+(`flickos-layout supervise`, one per program) that restarts one that fails, so a
+missing bar means it failed repeatedly or never started. Everything they print
+goes to **`$XDG_RUNTIME_DIR/flickos/panel.log`** — the session's stderr goes
+nowhere a user can read, so that log is the only trace:
+
+```sh
+cat $XDG_RUNTIME_DIR/flickos/panel.log     # "restarting it in Ns", "giving up"
+pgrep -af 'flickos-layout (panel|supervise)'   # supervisors still running?
+pgrep -a waybar; ls $XDG_RUNTIME_DIR/flickos/waybar/
+```
+
+- `waybar … giving up` after five restarts: the lines above it are waybar's own
+  output. A bar that keeps dying right after an output appears or disappears is
+  usually the VM's or a second monitor's mode change.
+- No `starting the panel` line at all: `flickos-layout panel` never ran (labwc
+  didn't start its autostart, or flickos-layouts isn't installed).
+- `another flickos-layout has been busy for 10s`: a sibling autostart command
+  hung while holding `layout.lock`. The panel carries on without the lock, so
+  this is a warning, not the cause.
+
+Start the panel by hand to watch it fail in a terminal:
+
+```sh
+waybar -c $XDG_RUNTIME_DIR/flickos/waybar/config.jsonc -s $XDG_RUNTIME_DIR/flickos/waybar/style.css
+```
 
 **Panel is a single top bar (taskbar, clock, status) instead of the chosen layout**
 That's flickos-settings' fallback panel: `flickos-layout panel` couldn't generate
@@ -686,8 +724,76 @@ from a script, replace its `CHECKS` and let it take screenshots for you.
 - A window dragged out of its tile keeps counting until it is tiled again or
   closed.
 
+## Shortcut sheet (flickos-shortcuts)
+
+Holding Super shows nothing:
+
+```sh
+pgrep -af 'flickos-shortcuts daemon'   # running? autostart starts it
+flickos-shortcuts daemon               # in a session terminal: prints why it stops
+flickos-shortcuts show                 # the sheet without the daemon
+flickos-shortcuts list                 # what it would show
+```
+
+- `already running`: another daemon holds `$XDG_RUNTIME_DIR/flickos/shortcuts.lock`.
+- `GTK 3 with layer shell is not available`: `gir1.2-gtklayershell-0.1` is
+  missing (a Depends; `sudo apt install flickos-shortcuts`).
+- The sheet shows only when **Super alone** is held: with another modifier
+  down (Shift, Ctrl, Alt) it waits until that is let go.
+- `no labwc rc.xml found`: no `labwc/rc.xml` in `~/.config` or any
+  `XDG_CONFIG_DIRS` folder (the sheet says so instead of listing keys).
+- A shortcut with a vague description (*Run …*, under *Other*) is a command
+  `COMMANDS` doesn't know ([09](/docs/09-customizing/#shortcut-sheet-hold-super)).
+
+## Settings window (flickos-control)
+
+A mouse, touchpad or keyboard setting doesn't apply:
+
+```sh
+flickos-control get                                  # what is set, and where (user, system, default)
+cat $XDG_RUNTIME_DIR/flickos/control/labwc.xml       # the fragment for labwc
+grep -A3 '<libinput>' $XDG_RUNTIME_DIR/flickos/xdg/labwc/rc.xml   # merged into the overlay?
+flickos-layout doctor                                # user files that hide the overlay
+```
+
+- A `~/.config/labwc/rc.xml` replaces the whole overlay, so none of these
+  settings (nor layouts or tiling) apply; a `~/.config/labwc/environment`
+  hides the keyboard layout. `doctor` and the page's warning bar say so.
+- Back to the *Device default* click method takes effect at the next login:
+  labwc keeps a libinput option that disappears from its config.
+- The keyboard layout of the login screen and the console is
+  `/etc/default/keyboard`, changed only by *Use for Login Screen and
+  Console…*. `localectl set-x11-keymap` doesn't work on Debian (localed is
+  read-only there). The console picks it up at the next boot.
+- *Use for Login Screen and Console…* (or *Log in automatically*) does nothing: `pkexec` needs the polkit
+  agent (mate-polkit, started by autostart) to ask for the password. Try
+  `pkexec /usr/libexec/flickos/control-helper keyboard pc105 us "" ""` in a
+  terminal to see its message.
+
+Other pages:
+
+- **Super+B or Super+E opens the wrong app:** `xdg-mime query default
+  x-scheme-handler/https` (or `inode/directory`) shows the default;
+  `/usr/libexec/flickos/open-default browser` falls back to `x-www-browser`
+  when the default's desktop file is missing. **Super+Enter:** `DEBUG=1
+  xdg-terminal-exec` shows which list and terminal it picks (the first
+  installed one in `~/.config/xdg-terminals.list`, then
+  `/etc/xdg/flickos/xdg-terminals.list`); a terminal whose `Exec=` isn't
+  quoted by the desktop-entry rules (double quotes only) is skipped.
+- **The screen locks at the old time:** `pgrep -a swayidle` shows the times;
+  a change restarts only FlickOS's swayidle (`FLICKOS_IDLE=1` in its
+  environment). Not in the live session.
+- **"Set the time automatically" is greyed out:** `timedatectl show -p
+  CanNTP` is `no` without `systemd-timesyncd` (a Depends of flickos-desktop
+  since 1.16).
+- **Login page missing:** it shows only on installed systems with
+  flickos-greeter (group `autologin`), never with `boot=live`.
+
 ## Getting more information
 
+- **For a bug report:** *Settings → All Settings → About → Copy System Info*,
+  or `flickos-control about` in a terminal, gives the FlickOS, Debian and
+  Linux versions, the hardware and the versions of FlickOS's packages.
 - `man lb_config`, `man lb_build`, `man live-build`, `man live-boot`, `man live-config`
 - `man dh`, `man dh_install`, `man deb-control`, `man deb-changelog`, `man dch`
 - `man reprepro`

@@ -19,6 +19,14 @@ const features = [
 		body: 'Redmond, Cupertino, and Traditional — switch from Settings without logging out.',
 	},
 	{
+		title: 'One Settings window',
+		body: 'All Settings covers layout, input, tiling, defaults, power and idle, date and time (network clock), login, shortcuts, and About.',
+	},
+	{
+		title: 'Hold Super for shortcuts',
+		body: 'Press and hold Super for about 0.7s to see the shortcut sheet; let go to close. Also under Settings → Keyboard Shortcuts.',
+	},
+	{
 		title: 'Arc look everywhere',
 		body: 'GTK, panel, terminal, launcher, notifications, boot menu, splash, and installer share the Arc palette. Light style available.',
 	},
@@ -30,11 +38,11 @@ const features = [
 	},
 	{
 		title: 'Ready to use',
-		body: 'Firefox ESR, LibreOffice, VLC, PipeWire, NetworkManager, Flatpak, firewall on by default.',
+		body: 'Firefox ESR with uBlock Origin, LibreOffice, VLC, Software manager (PackageKit), PipeWire, NetworkManager, Flatpak, firewall on by default.',
 	},
 	{
 		title: 'Updates that stick',
-		body: 'FlickOS packages update via the apt repository alongside normal Debian security updates.',
+		body: 'FlickOS packages update via the apt repository alongside normal Debian security updates. Install app updates from Settings → Software Updates.',
 	},
 	{
 		title: 'Install when ready',
@@ -61,6 +69,7 @@ const layouts = [
 ];
 
 const keys = [
+	{ key: 'Hold Super', action: 'Shortcut sheet' },
 	{ key: 'Super+Enter', action: 'Terminal' },
 	{ key: 'Super+D', action: 'App launcher' },
 	{ key: 'Super+E', action: 'File manager' },
@@ -140,7 +149,7 @@ const keys = [
 	<section class="section layouts">
 		<div class="section-head">
 			<h2 class="flick-display">Three layouts, one desktop</h2>
-			<p>Switch live from Settings → Desktop Layout &amp; Style.</p>
+			<p>Switch live from All Settings → Desktop Layout &amp; Style.</p>
 		</div>
 		<ul class="layout-grid">
 			{
@@ -165,24 +174,26 @@ const keys = [
 			<h2 class="flick-display">Keybindings</h2>
 			<p>Right-click the desktop for the full menu.</p>
 		</div>
-		<table>
-			<thead>
-				<tr>
-					<th scope="col">Key</th>
-					<th scope="col">Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				{
-					keys.map((k) => (
-						<tr>
-							<td><kbd>{k.key}</kbd></td>
-							<td>{k.action}</td>
-						</tr>
-					))
-				}
-			</tbody>
-		</table>
+		<div class="table-wrap">
+			<table>
+				<thead>
+					<tr>
+						<th scope="col">Key</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					{
+						keys.map((k) => (
+							<tr>
+								<td><kbd>{k.key}</kbd></td>
+								<td>{k.action}</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
 	</section>
 </MarketingLayout>
 
@@ -194,8 +205,13 @@ const keys = [
 	.hero-copy {
 		max-width: 40rem;
 		margin: 0 auto;
-		padding: 2.75rem 1.25rem 1.75rem;
+		padding: 2rem 1.25rem 1.5rem;
 		text-align: center;
+	}
+	@media (min-width: 48rem) {
+		.hero-copy {
+			padding: 2.75rem 1.25rem 1.75rem;
+		}
 	}
 	.brand {
 		margin: 0 0 0.75rem;
@@ -221,36 +237,17 @@ const keys = [
 	.cta {
 		margin-top: 1.5rem;
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
+		flex-direction: column;
+		align-items: stretch;
 		gap: 0.75rem;
 	}
-	:global(.flick-btn) {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.7rem 1.2rem;
-		border-radius: 0.35rem;
-		font-weight: 600;
-		text-decoration: none !important;
-		border: 1px solid transparent;
-		transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-	}
-	:global(.flick-btn.primary) {
-		background: var(--flick-accent);
-		color: var(--flick-accent-fg) !important;
-	}
-	:global(.flick-btn.primary:hover) {
-		filter: brightness(1.08);
-	}
-	:global(.flick-btn.ghost) {
-		background: transparent;
-		border-color: color-mix(in srgb, var(--flick-fg) 28%, transparent);
-		color: var(--flick-fg) !important;
-	}
-	:global(.flick-btn.ghost:hover) {
-		border-color: var(--flick-accent);
-		color: var(--flick-accent) !important;
+	@media (min-width: 30rem) {
+		.cta {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: center;
+		}
 	}
 	.hero-visual {
 		width: 100%;
@@ -295,7 +292,15 @@ const keys = [
 	.section {
 		max-width: 72rem;
 		margin: 0 auto;
-		padding: 3rem 1.25rem 0;
+		padding: 2.5rem 1.25rem 0;
+	}
+	.section.keys {
+		padding-bottom: 0.5rem;
+	}
+	@media (min-width: 48rem) {
+		.section {
+			padding-top: 3rem;
+		}
 	}
 	.section-head {
 		max-width: 36rem;
@@ -380,29 +385,42 @@ const keys = [
 	.more {
 		margin: 1.25rem 0 0;
 	}
+	.keys .table-wrap {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		margin-inline: -0.25rem;
+		padding-inline: 0.25rem;
+	}
 	.keys table {
 		width: 100%;
+		min-width: 18rem;
 		border-collapse: collapse;
-		font-size: 0.98rem;
+		font-size: 0.95rem;
 	}
 	.keys th,
 	.keys td {
 		text-align: left;
-		padding: 0.65rem 0.5rem;
+		padding: 0.7rem 0.4rem;
 		border-bottom: 1px solid var(--flick-border);
+		vertical-align: top;
 	}
 	.keys th {
 		color: var(--flick-muted);
 		font-weight: 500;
 		font-size: 0.85rem;
 	}
+	.keys td:first-child {
+		white-space: nowrap;
+		padding-right: 0.75rem;
+	}
 	kbd {
 		font-family: ui-monospace, 'IBM Plex Mono', monospace;
-		font-size: 0.9em;
+		font-size: 0.85em;
 		color: var(--flick-title);
 		background: var(--flick-base);
 		border: 1px solid var(--flick-border);
 		padding: 0.15rem 0.4rem;
 		border-radius: 0.25rem;
+		white-space: nowrap;
 	}
 </style>

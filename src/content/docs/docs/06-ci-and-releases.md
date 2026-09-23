@@ -11,7 +11,7 @@ sidebar:
 | ISO downloads | SourceForge Files: https://sourceforge.net/projects/flickos/files/ (one folder per release, e.g. `v2.0/`) |
 | Apt repository | GitHub Pages (`dvbondoy/flickos-apt`): https://dvbondoy.github.io/flickos-apt/ ([05](/docs/05-apt-repository/)) |
 | Source code, CI, issues | GitHub: https://github.com/dvbondoy/FlickOS |
-| Website | https://flickos.net (planned) |
+| Website | https://flickos.net |
 
 **Release history:** FlickOS 1.0 and 1.1 (`FlickOS-64bit-v1.1.iso`, May 2023)
 were based on Ubuntu 20.04 and LXLE. FlickOS **2.0** is a rebuild on Debian 13.

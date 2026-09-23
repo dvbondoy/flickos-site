@@ -15,6 +15,9 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 			<p>
 				Hybrid live ISO for amd64 — boots on BIOS and UEFI. About 1.4&nbsp;GB.
 			</p>
+			<p>
+				Includes the All Settings hub, hold-Super shortcut sheet, Software manager, and Firefox ESR with uBlock Origin.
+			</p>
 			<p class="cta">
 				<a class="flick-btn primary" href={ISO_URL} rel="noopener noreferrer">Get the ISO on SourceForge</a>
 			</p>
@@ -105,12 +108,18 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 	.page {
 		max-width: 44rem;
 		margin: 0 auto;
-		padding: 2.5rem 1.25rem 0;
+		padding: 1.75rem 1.25rem 0;
+	}
+	@media (min-width: 48rem) {
+		.page {
+			padding-top: 2.5rem;
+		}
 	}
 	.page-head h1 {
 		margin: 0;
-		font-size: clamp(2rem, 5vw, 2.75rem);
+		font-size: clamp(1.75rem, 7vw, 2.75rem);
 		color: var(--flick-title);
+		line-height: 1.15;
 	}
 	.page-head p {
 		margin: 0.75rem 0 0;
@@ -119,6 +128,18 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 	}
 	.cta {
 		margin-top: 1.25rem !important;
+	}
+	.cta :global(.flick-btn) {
+		display: inline-flex;
+		width: 100%;
+		max-width: 22rem;
+		min-height: 2.75rem;
+		justify-content: center;
+	}
+	@media (min-width: 30rem) {
+		.cta :global(.flick-btn) {
+			width: auto;
+		}
 	}
 	.warn {
 		margin-top: 2rem;
@@ -154,14 +175,21 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 	}
 	.hash-row {
 		display: flex;
-		flex-wrap: wrap;
+		flex-direction: column;
 		gap: 0.75rem;
-		align-items: center;
+		align-items: stretch;
 		margin: 1rem 0;
 	}
+	@media (min-width: 36rem) {
+		.hash-row {
+			flex-direction: row;
+			align-items: center;
+		}
+	}
 	.hash-row code {
-		flex: 1 1 16rem;
-		font-size: 0.78rem;
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 0.75rem;
 		word-break: break-all;
 		background: var(--flick-base);
 		border: 1px solid var(--flick-border);
@@ -169,15 +197,24 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 		border-radius: 0.3rem;
 		color: var(--flick-title);
 	}
+	.hash-row :global(.flick-btn) {
+		min-height: 2.75rem;
+		flex-shrink: 0;
+	}
 	.cmd {
 		margin: 0.75rem 0;
 		padding: 0.85rem 1rem;
 		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		max-width: 100%;
 		background: var(--flick-panel);
 		border: 1px solid var(--flick-border);
 		border-radius: 0.3rem;
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		color: var(--flick-title);
+	}
+	.cmd code {
+		white-space: pre;
 	}
 	.hint {
 		font-size: 0.92rem;
