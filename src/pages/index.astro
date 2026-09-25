@@ -1,7 +1,6 @@
 ---
 import { Image } from 'astro:assets';
 import MarketingLayout from '../layouts/MarketingLayout.astro';
-import hero from '../assets/screenshots/og-image.png';
 import redmond from '../assets/screenshots/layout-redmond.png';
 import cupertino from '../assets/screenshots/layout-cupertino.png';
 import traditional from '../assets/screenshots/layout-traditional.png';
@@ -20,7 +19,11 @@ const features = [
 	},
 	{
 		title: 'One Settings window',
-		body: 'All Settings covers layout, input, tiling, defaults, power and idle, date and time (network clock), login, shortcuts, and About.',
+		body: 'All Settings covers layout, input, tiling, defaults, power and idle, date and time (network clock), login, user accounts, shortcuts, and About.',
+	},
+	{
+		title: 'Optional start menu',
+		body: 'Off by default. Turn it on in Settings → Desktop Layout & Style and tap Super to open it: a classic menu in Redmond, categories in Traditional, a full-screen app grid in Cupertino.',
 	},
 	{
 		title: 'Hold Super for shortcuts',
@@ -46,7 +49,7 @@ const features = [
 	},
 	{
 		title: 'Install when ready',
-		body: 'Boot the live session, explore, then install with Calamares from the desktop menu.',
+		body: 'Boot the live session, explore, then install with Calamares from the desktop menu. At first login a welcome window points you to layouts, Settings, Wi-Fi, and shortcuts.',
 	},
 ];
 
@@ -70,6 +73,7 @@ const layouts = [
 
 const keys = [
 	{ key: 'Hold Super', action: 'Shortcut sheet' },
+	{ key: 'Tap Super', action: 'Start menu (when turned on)' },
 	{ key: 'Super+Enter', action: 'Terminal' },
 	{ key: 'Super+D', action: 'App launcher' },
 	{ key: 'Super+E', action: 'File manager' },
@@ -100,9 +104,9 @@ const keys = [
 		</div>
 		<div class="hero-visual flick-anim-hero" style="animation-delay: 0.12s">
 			<Image
-				src={hero}
+				src={redmond}
 				alt="FlickOS Redmond layout desktop in a live session"
-				widths={[720, 1080, 1440, 1920]}
+				widths={[720, 1080, 1366]}
 				sizes="100vw"
 				class="hero-shot"
 				loading="eager"
@@ -361,7 +365,7 @@ const keys = [
 		}
 	}
 	.layout-grid .shot {
-		aspect-ratio: 16 / 10;
+		aspect-ratio: 1366 / 768;
 		overflow: hidden;
 		border: 1px solid var(--flick-border);
 		background: var(--flick-surface, #1b1f27);

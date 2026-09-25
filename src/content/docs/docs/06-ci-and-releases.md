@@ -1,6 +1,6 @@
 ---
 title: CI and releases
-description: FlickOS documentation.
+description: "Where FlickOS ISOs and packages are published, what CI builds, and how a release is cut."
 sidebar:
   order: 6
 ---

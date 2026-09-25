@@ -63,12 +63,14 @@ export default defineConfig({
 						{ label: 'Troubleshooting', slug: 'docs/07-troubleshooting' },
 						{ label: 'Reference', slug: 'docs/08-reference' },
 						{ label: 'Customizing', slug: 'docs/09-customizing' },
+						{ label: 'Custom builds', slug: 'docs/10-custom-builds' },
 					],
 				},
 				{
 					label: 'Design',
 					items: [
 						{ label: 'flickos-control', slug: 'docs/design/flickos-control' },
+						{ label: 'flickos-menu', slug: 'docs/design/flickos-menu' },
 					],
 				},
 			],

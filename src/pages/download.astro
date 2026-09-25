@@ -1,8 +1,11 @@
 ---
 import MarketingLayout from '../layouts/MarketingLayout.astro';
+import { donate } from '../config/donate';
+import { fetchDownloadStats, formatCount } from '../data/downloads';
 
 const SHA256 = '20a96701d0734d55a06f53a0d09c9577ac3e609bd5f7559566aef8956c374c74';
 const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
+const stats = await fetchDownloadStats();
 ---
 
 <MarketingLayout
@@ -16,12 +19,25 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 				Hybrid live ISO for amd64 — boots on BIOS and UEFI. About 1.4&nbsp;GB.
 			</p>
 			<p>
-				Includes the All Settings hub, hold-Super shortcut sheet, Software manager, and Firefox ESR with uBlock Origin.
+				Includes the Software manager and Firefox ESR with uBlock Origin. Run the first system update after installing to get what has shipped since: the All Settings hub (now with Users), the hold-Super shortcut sheet, and the optional start menu.
 			</p>
 			<p class="cta">
 				<a class="flick-btn primary" href={ISO_URL} rel="noopener noreferrer">Get the ISO on SourceForge</a>
 			</p>
+			<p class="downloads" id="download-stats" hidden={!stats}>
+				<strong data-stat="release">{stats ? formatCount(stats.release) : ''}</strong> downloads of 2.0
+				· <strong data-stat="total">{stats ? formatCount(stats.total) : ''}</strong> all-time
+			</p>
 		</header>
+
+		{
+			donate.enabled && (
+				<aside class="donate" role="note">
+					FlickOS is free. If it is useful to you, please consider{' '}
+					<a href={donate.href}>supporting the project</a>.
+				</aside>
+			)
+		}
 
 		<aside class="warn" role="note">
 			<strong>Coming from 1.x?</strong>
@@ -89,6 +105,19 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 </MarketingLayout>
 
 <script>
+	import { fetchDownloadStats, formatCount } from '../data/downloads';
+
+	// Refresh the build-time counts so they stay current between deploys.
+	fetchDownloadStats().then((stats) => {
+		const el = document.getElementById('download-stats');
+		if (!stats || !el) return;
+		for (const key of ['release', 'total'] as const) {
+			const node = el.querySelector(`[data-stat="${key}"]`);
+			if (node) node.textContent = formatCount(stats[key]);
+		}
+		el.hidden = false;
+	});
+
 	const btn = document.getElementById('copy-sha');
 	btn?.addEventListener('click', async () => {
 		const hash = btn.getAttribute('data-hash') ?? '';
@@ -141,11 +170,27 @@ const ISO_URL = 'https://sourceforge.net/projects/flickos/files/v2.0/';
 			width: auto;
 		}
 	}
+	.downloads {
+		margin-top: 0.6rem !important;
+		font-size: 0.9rem;
+	}
+	.downloads strong {
+		color: var(--flick-title);
+		font-variant-numeric: tabular-nums;
+	}
 	.warn {
 		margin-top: 2rem;
 		padding: 1rem 1.1rem;
 		border-left: 3px solid var(--flick-warning);
 		background: color-mix(in srgb, var(--flick-warning) 12%, var(--flick-panel));
+		color: var(--flick-fg);
+		line-height: 1.45;
+	}
+	.donate {
+		margin-top: 1.5rem;
+		padding: 0.85rem 1.1rem;
+		border-left: 3px solid var(--flick-accent);
+		background: color-mix(in srgb, var(--flick-accent) 12%, var(--flick-panel));
 		color: var(--flick-fg);
 		line-height: 1.45;
 	}

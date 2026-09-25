@@ -1,4 +1,6 @@
 ---
+import { donate } from '../config/donate';
+
 const year = new Date().getFullYear();
 ---
 
@@ -13,6 +15,7 @@ const year = new Date().getFullYear();
 			<li><a href="https://dvbondoy.github.io/flickos-apt/">Apt repository</a></li>
 			<li><a href="/docs/01-overview/">Docs</a></li>
 			<li><a href="/download/">Download</a></li>
+			{donate.enabled && <li><a href={donate.href}>Donate</a></li>}
 		</ul>
 		<p class="copy">© {year} FlickOS contributors</p>
 	</div>

@@ -1,5 +1,6 @@
 ---
 import logo from '../assets/brand/flickos.svg';
+import { donate } from '../config/donate';
 
 const path = Astro.url.pathname;
 const links = [
@@ -44,6 +45,17 @@ const links = [
 						{link.label}
 					</a>
 				))
+			}
+			{
+				donate.enabled && (
+					<a
+						class="donate"
+						href={donate.href}
+						aria-current={path.startsWith(donate.href) ? 'page' : undefined}
+					>
+						<span aria-hidden="true">♥</span> Donate
+					</a>
+				)
 			}
 		</nav>
 	</div>
@@ -213,6 +225,11 @@ const links = [
 		color: var(--flick-accent) !important;
 		opacity: 1;
 	}
+	nav a.donate {
+		color: var(--flick-accent) !important;
+		font-weight: 600;
+		opacity: 1;
+	}
 	@media (min-width: 48rem) {
 		.menu-toggle {
 			display: none;
@@ -233,6 +250,20 @@ const links = [
 		nav a {
 			display: inline;
 			padding: 0.25rem 0;
+		}
+		nav a.donate {
+			margin-left: 0.25rem;
+			padding: 0.3rem 0.8rem;
+			border-radius: 999px;
+			background: var(--flick-accent);
+			color: var(--flick-accent-fg) !important;
+			font-weight: 600;
+			opacity: 1;
+		}
+		nav a.donate:hover,
+		nav a.donate[aria-current='page'] {
+			filter: brightness(1.08);
+			color: var(--flick-accent-fg) !important;
 		}
 	}
 </style>

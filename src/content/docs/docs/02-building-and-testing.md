@@ -1,6 +1,6 @@
 ---
 title: Building and testing
-description: FlickOS documentation.
+description: "Build the FlickOS ISO on Debian 13, boot-test it, and try the live session and installer in QEMU."
 sidebar:
   order: 2
 ---

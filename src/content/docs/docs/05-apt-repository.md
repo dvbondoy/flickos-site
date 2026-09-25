@@ -1,6 +1,6 @@
 ---
 title: Apt repository
-description: The FlickOS apt repository is how installed systems receive updates to
+description: "The FlickOS apt repository is how installed systems receive updates to flickos-* packages. It's a folder of static files (dists/, pool/), signed with a GPG…"
 sidebar:
   order: 5
 ---

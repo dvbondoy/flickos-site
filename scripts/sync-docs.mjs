@@ -42,30 +42,44 @@ function titleFromHeading(heading, { numbered = true } = {}) {
 	return heading.replace(/^#\s+/, '').trim();
 }
 
-function descriptionFromBody(body) {
-	const lines = body.split('\n');
+/** For docs that open with a heading instead of an intro paragraph. */
+const FALLBACK_DESCRIPTIONS = {
+	'01-overview.md':
+		'What FlickOS is, how the repository is laid out, and where to change each part of the desktop.',
+	'02-building-and-testing.md':
+		'Build the FlickOS ISO on Debian 13, boot-test it, and try the live session and installer in QEMU.',
+	'06-ci-and-releases.md':
+		'Where FlickOS ISOs and packages are published, what CI builds, and how a release is cut.',
+	'08-reference.md': 'Command cheat sheet, file locations, and quick reference for FlickOS maintainers.',
+};
+
+/** Markdown inline syntax → plain text, for meta descriptions. */
+function plainText(md) {
+	return md
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/\*\*|`/g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+function descriptionFromBody(body, filename) {
+	// Paragraphs before the first heading, code block or table.
 	const paras = [];
 	let buf = [];
-	for (const line of lines) {
-		if (line.startsWith('#')) break;
-		if (line.startsWith('```')) break;
-		if (line.startsWith('|')) break;
+	for (const line of body.split('\n')) {
+		if (line.startsWith('#') || line.startsWith('```') || line.startsWith('|')) break;
 		if (line.startsWith('- [')) continue; // TOC
 		if (line.trim() === '') {
-			if (buf.length) {
-				paras.push(buf.join(' ').trim());
-				buf = [];
-			}
+			if (buf.length) paras.push(buf.join(' '));
+			buf = [];
 			continue;
 		}
 		buf.push(line.trim());
-		if (paras.length + (buf.length ? 1 : 0) >= 1 && buf.join(' ').length > 40) {
-			paras.push(buf.join(' ').trim());
-			break;
-		}
 	}
-	if (!paras.length && buf.length) paras.push(buf.join(' ').trim());
-	let desc = (paras[0] || 'FlickOS documentation.').replace(/\s+/g, ' ').trim();
+	if (buf.length) paras.push(buf.join(' '));
+	// Design docs open with a status line; the next paragraph says what they are.
+	const intro = paras.find((p) => !p.startsWith('**Status:**'));
+	let desc = intro ? plainText(intro) : FALLBACK_DESCRIPTIONS[filename] ?? 'FlickOS documentation.';
 	if (desc.length > 160) desc = desc.slice(0, 157).replace(/\s+\S*$/, '') + '…';
 	return desc;
 }
@@ -133,7 +147,7 @@ function processNumberedFile(filename) {
 	const raw = fs.readFileSync(path.join(SRC, filename), 'utf8');
 	const { heading, body } = splitHeading(raw, filename);
 	const title = titleFromHeading(heading, { numbered: true });
-	const description = descriptionFromBody(body);
+	const description = descriptionFromBody(body, filename);
 	const rewritten = rewriteLinks(body);
 
 	const frontmatter = [
@@ -153,7 +167,7 @@ function processDesignFile(filename, order) {
 	const raw = fs.readFileSync(path.join(SRC, 'design', filename), 'utf8');
 	const { heading, body } = splitHeading(raw, `design/${filename}`);
 	const title = titleFromHeading(heading, { numbered: false });
-	const description = descriptionFromBody(body);
+	const description = descriptionFromBody(body, filename);
 	const rewritten = rewriteLinks(body);
 
 	const frontmatter = [

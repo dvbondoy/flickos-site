@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: FlickOS documentation.
+description: "What FlickOS is, how the repository is laid out, and where to change each part of the desktop."
 sidebar:
   order: 1
 ---
@@ -180,9 +180,10 @@ starts the same session.
 | Change the hold-Super shortcut sheet (descriptions, hold time, look) | `packages/flickos-shortcuts/` (`COMMANDS`, `ACTIONS`, `HOLD_MS`, `usr/share/flickos/shortcuts/style.css`) | [09](/docs/09-customizing/#shortcut-sheet-hold-super) |
 | Change the Settings window (pages, tiles for other apps, mouse/touchpad/keyboard options) | `packages/flickos-control/usr/bin/flickos-control` (`PAGES`, `TILES`, `SETTINGS`); *All Settings* in both menus | [09](/docs/09-customizing/#settings-window) |
 | Change mouse, touchpad, keyboard or idle defaults for everyone | `packages/flickos-control/etc/xdg/flickos/input.conf`, `keyboard.conf`, `idle.conf` | [09](/docs/09-customizing/#settings-window) |
+| Change the optional start menu (pinned apps, sections, look, on for everyone) | `packages/flickos-menu/` (`etc/xdg/flickos/menu.conf`, `SECTIONS`, `style.css`), live pins in `packages/flickos-installer/etc/xdg/flickos-live/flickos/menu.conf`, `Launcher=` in flickos-layouts' `layouts.conf` | [09](/docs/09-customizing/#start-menu) |
 | Change what a click on the desktop does | `flickos-layout` (`CLICKS`), `packages/flickos-settings/etc/xdg/labwc/rc.xml` (`<mouse>`) | [09](/docs/09-customizing/#desktop-clicks) |
 | Change the Desktop Layout & Style chooser or its previews | `packages/flickos-layouts/usr/bin/flickos-layout` (`pick`), `tools/make-layout-previews.sh` | [09](/docs/09-customizing/#the-chooser) |
-| Stop or change the chooser at a new account's first login | `packages/flickos-layouts/etc/skel/.config/flickos/choose-layout`, `flickos-layout first-run` | [09](/docs/09-customizing/#first-login) |
+| Change the welcome window, or stop it at a new account's first login | `packages/flickos-welcome/` (`CARDS`, `etc/xdg/flickos/welcome.conf`, `etc/skel/.config/flickos/welcome`); the chooser on its own is flickos-layouts' `choose-layout` and `flickos-layout first-run` | [09](/docs/09-customizing/#first-login) |
 | Change installer branding or behavior | `packages/flickos-installer/` | [09](/docs/09-customizing/#installer) |
 | Add a package only to the live ISO (not installed systems) | `config/package-lists/live.list.chroot` | [03](/docs/03-live-build-config/) |
 | Enable a systemd service in the image | `config/hooks/normal/0100-services.hook.chroot` | [03](/docs/03-live-build-config/) |

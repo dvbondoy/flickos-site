@@ -1,0 +1,537 @@
+---
+import QRCode from 'qrcode';
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import { donate } from '../../config/donate';
+import { donations } from '../../data/donors';
+
+// Only emit /donate/ when donations are enabled; otherwise the route builds nothing.
+export function getStaticPaths() {
+	return donate.enabled ? [{ params: { path: undefined } }] : [];
+}
+
+const ANONYMOUS = 'Anonymous';
+
+const usd = new Intl.NumberFormat('en-US', {
+	style: 'currency',
+	currency: 'USD',
+	minimumFractionDigits: 0,
+	maximumFractionDigits: 2,
+});
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+
+const flag = (code: string) =>
+	String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+const countryName = (code: string) => regionNames.of(code.toUpperCase()) ?? code;
+const ordinal = (n: number) => {
+	const suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th');
+	return `${n}${suffix}`;
+};
+
+// Chronological pass to number each donor's donations (1st, 2nd, ...).
+const chronological = [...donations].sort((a, b) => a.date.localeCompare(b.date));
+const seen = new Map<string, number>();
+const numbered = chronological.map((d) => {
+	const nth = (seen.get(d.name) ?? 0) + 1;
+	seen.set(d.name, nth);
+	return { ...d, nth };
+});
+
+const latest = numbered.reverse().slice(0, 20);
+
+const grandTotal = donations.reduce((sum, d) => sum + d.amount, 0);
+const byCountry = new Map<string, { total: number; count: number; max: number }>();
+for (const d of donations) {
+	const c = byCountry.get(d.country) ?? { total: 0, count: 0, max: 0 };
+	c.total += d.amount;
+	c.count += 1;
+	c.max = Math.max(c.max, d.amount);
+	byCountry.set(d.country, c);
+}
+const topCountries = [...byCountry.entries()]
+	.map(([code, c]) => ({ code, ...c, share: grandTotal ? (c.total / grandTotal) * 100 : 0 }))
+	.sort((a, b) => b.total - a.total)
+	.slice(0, 10);
+
+const byDonor = new Map<string, { total: number; count: number; website?: string }>();
+for (const d of chronological) {
+	if (d.name === ANONYMOUS) continue;
+	const donor = byDonor.get(d.name) ?? { total: 0, count: 0 };
+	donor.total += d.amount;
+	donor.count += 1;
+	donor.website = d.website ?? donor.website;
+	byDonor.set(d.name, donor);
+}
+const topDonors = [...byDonor.entries()]
+	.map(([name, d]) => ({ name, ...d }))
+	.sort((a, b) => b.total - a.total)
+	.slice(0, 100);
+
+const { thisMonth } = donate;
+const monthLabel = new Date(`${thisMonth.month}-01T00:00:00Z`).toLocaleDateString('en-US', {
+	month: 'long',
+	year: 'numeric',
+	timeZone: 'UTC',
+});
+
+const wallets = await Promise.all(
+	donate.crypto.map(async (w) => ({
+		...w,
+		qr: await QRCode.toString(`${w.scheme}:${w.address}`, { type: 'svg', margin: 1 }),
+	})),
+);
+---
+
+<MarketingLayout
+	title="Donate"
+	description="Support FlickOS development. Donations pay for hosting, test hardware, and time."
+>
+	<section class="page">
+		<header class="page-head flick-anim-rise">
+			<h1 class="flick-display">Donating to FlickOS</h1>
+			<p>
+				FlickOS is free and GPL-licensed, and we believe it can be funded entirely by its community.
+				Donations pay for hosting, test hardware, and the hours that go into each release.
+			</p>
+			{
+				thisMonth.amount > 0 && (
+					<p class="month">
+						So far in {monthLabel}: <strong>{usd.format(thisMonth.amount)}</strong>{' '}
+						<span>
+							({thisMonth.count} donation{thisMonth.count === 1 ? '' : 's'})
+						</span>
+					</p>
+				)
+			}
+		</header>
+
+		<section class="block">
+			<h2 class="flick-display">Make a donation</h2>
+			<p>
+				Donations made here are listed below by first name and last initial. Mention it in your
+				donation note if you would rather stay anonymous, or to add a link to your website.
+			</p>
+			<ul class="methods">
+				{
+					donate.primary.map((method) => (
+						<li class="method">
+							<h3>{method.label}</h3>
+							<p>{method.blurb}</p>
+							<a class="flick-btn primary" href={method.url} target="_blank" rel="noopener noreferrer">
+								Donate with {method.label}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</section>
+
+		{
+			donate.recurring.length > 0 && (
+				<section class="block">
+					<h2 class="flick-display">Monthly support</h2>
+					<ul class="methods">
+						{donate.recurring.map((method) => (
+							<li class="method">
+								<h3>{method.label}</h3>
+								<p>{method.blurb}</p>
+								<a class="flick-btn ghost" href={method.url} target="_blank" rel="noopener noreferrer">
+									Support on {method.label}
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		{
+			wallets.length > 0 && (
+				<section class="block">
+					<h2 class="flick-display">Cryptocurrency</h2>
+					<p class="hint">
+						These alternatives are anonymous or need very little information. Donations made with
+						them help the project, but they are not listed on this page or anywhere else.
+					</p>
+					<ul class="wallets">
+						{wallets.map((w) => (
+							<li class="wallet">
+								<div class="qr" aria-hidden="true" set:html={w.qr} />
+								<div class="wallet-body">
+									<h3>
+										{w.label} <span>{w.symbol}</span>
+									</h3>
+									<code>{w.address}</code>
+									<button type="button" class="flick-btn ghost" data-copy={w.address}>
+										Copy address
+									</button>
+								</div>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		<section class="block">
+			<h2 class="flick-display">Latest donors</h2>
+			{
+				latest.length > 0 ? (
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Date</th>
+									<th scope="col">Donor</th>
+									<th scope="col" class="num">Amount</th>
+								</tr>
+							</thead>
+							<tbody>
+								{latest.map((d) => (
+									<tr>
+										<td class="date">{d.date}</td>
+										<td>
+											<span class="flag" title={countryName(d.country)} role="img" aria-label={countryName(d.country)}>
+												{flag(d.country)}
+											</span>{' '}
+											{d.name}
+										</td>
+										<td class="num">
+											{usd.format(d.amount)}
+											{d.nth > 1 && d.name !== ANONYMOUS && <span class="nth">({ordinal(d.nth)} donation)</span>}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				) : (
+					<p class="hint">No donors listed yet. Yours could be the first.</p>
+				)
+			}
+		</section>
+
+		{
+			topCountries.length > 0 && (
+				<section class="block">
+					<h2 class="flick-display">Top 10 countries</h2>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Country</th>
+									<th scope="col" class="num">Share</th>
+									<th scope="col" class="num">Average</th>
+									<th scope="col" class="num">Highest</th>
+								</tr>
+							</thead>
+							<tbody>
+								{topCountries.map((c) => (
+									<tr>
+										<td>
+											<span class="flag" aria-hidden="true">{flag(c.code)}</span> {countryName(c.code)}
+										</td>
+										<td class="num">{c.share.toFixed(1)}%</td>
+										<td class="num">{usd.format(c.total / c.count)}</td>
+										<td class="num">{usd.format(c.max)}</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</section>
+			)
+		}
+
+		{
+			topDonors.length > 0 && (
+				<section class="block">
+					<h2 class="flick-display">Top 100 donors</h2>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col" class="num">#</th>
+									<th scope="col">Donor</th>
+									<th scope="col" class="num">Donations</th>
+									<th scope="col" class="num">Total</th>
+								</tr>
+							</thead>
+							<tbody>
+								{topDonors.map((d, i) => (
+									<tr>
+										<td class="num rank">{i + 1}</td>
+										<td>
+											{d.website ? (
+												<a href={d.website} rel="nofollow noopener noreferrer" target="_blank">
+													{d.name}
+												</a>
+											) : (
+												d.name
+											)}
+										</td>
+										<td class="num">{d.count}</td>
+										<td class="num">{usd.format(d.total)}</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</section>
+			)
+		}
+
+		<section class="block">
+			<h2 class="flick-display">Other ways to help</h2>
+			<ul class="help">
+				<li>
+					Star the project, report bugs, or send a pull request on{' '}
+					<a href="https://github.com/dvbondoy/FlickOS">GitHub</a>.
+				</li>
+				<li>
+					Answer questions and share your setup on{' '}
+					<a href="https://www.reddit.com/r/flickos/">r/flickos</a>.
+				</li>
+				<li>
+					Improve the <a href="/docs/01-overview/">documentation</a> or tell a friend about FlickOS.
+				</li>
+			</ul>
+		</section>
+	</section>
+</MarketingLayout>
+
+<script>
+	document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+		btn.addEventListener('click', async () => {
+			const label = btn.textContent;
+			try {
+				await navigator.clipboard.writeText(btn.dataset.copy ?? '');
+				btn.textContent = 'Copied';
+			} catch {
+				btn.textContent = 'Select above';
+			}
+			setTimeout(() => {
+				btn.textContent = label;
+			}, 1500);
+		});
+	});
+</script>
+
+<style>
+	.page {
+		max-width: 48rem;
+		margin: 0 auto;
+		padding: 1.75rem 1.25rem 0;
+	}
+	@media (min-width: 48rem) {
+		.page {
+			padding-top: 2.5rem;
+		}
+	}
+	.page-head h1 {
+		margin: 0;
+		font-size: clamp(1.75rem, 7vw, 2.75rem);
+		color: var(--flick-title);
+		line-height: 1.15;
+	}
+	.page-head p {
+		margin: 0.75rem 0 0;
+		color: var(--flick-muted);
+		line-height: 1.5;
+	}
+	.page-head .month {
+		margin-top: 1.25rem;
+		padding: 0.85rem 1.1rem;
+		border-left: 3px solid var(--flick-accent);
+		background: color-mix(in srgb, var(--flick-accent) 12%, var(--flick-panel));
+		color: var(--flick-fg);
+		font-size: 1.05rem;
+	}
+	.month strong {
+		color: var(--flick-title);
+		font-size: 1.2rem;
+	}
+	.month span {
+		color: var(--flick-muted);
+	}
+	.block {
+		margin-top: 2.5rem;
+	}
+	.block h2 {
+		margin: 0 0 0.75rem;
+		font-size: 1.4rem;
+		color: var(--flick-title);
+	}
+	.block > p {
+		margin: 0 0 1rem;
+		line-height: 1.55;
+		color: var(--flick-fg);
+	}
+	.hint {
+		color: var(--flick-muted) !important;
+	}
+	.methods {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1rem;
+	}
+	@media (min-width: 36rem) {
+		.methods {
+			grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+		}
+	}
+	.method {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 1.1rem;
+		background: var(--flick-panel);
+		border: 1px solid var(--flick-border);
+		border-radius: 0.4rem;
+	}
+	.method h3,
+	.wallet h3 {
+		margin: 0;
+		font-size: 1.1rem;
+		color: var(--flick-title);
+	}
+	.method p {
+		margin: 0;
+		flex: 1 1 auto;
+		color: var(--flick-muted);
+		line-height: 1.45;
+	}
+	.method :global(.flick-btn) {
+		margin-top: 0.5rem;
+	}
+	.wallets {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1rem;
+	}
+	@media (min-width: 44rem) {
+		.wallets {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	.wallet {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+		padding: 1rem;
+		background: var(--flick-panel);
+		border: 1px solid var(--flick-border);
+		border-radius: 0.4rem;
+	}
+	.qr {
+		flex: 0 0 6.5rem;
+		width: 6.5rem;
+		border-radius: 0.25rem;
+		overflow: hidden;
+		line-height: 0;
+	}
+	.qr :global(svg) {
+		width: 100%;
+		height: auto;
+	}
+	.wallet-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+	.wallet h3 span {
+		color: var(--flick-muted);
+		font-weight: 500;
+		font-size: 0.9rem;
+	}
+	.wallet code {
+		font-size: 0.75rem;
+		word-break: break-all;
+		background: var(--flick-base);
+		border: 1px solid var(--flick-border);
+		padding: 0.5rem 0.65rem;
+		border-radius: 0.3rem;
+		color: var(--flick-title);
+	}
+	.wallet :global(.flick-btn) {
+		align-self: flex-start;
+		min-height: 2.25rem;
+		padding: 0.4rem 0.9rem;
+		cursor: pointer;
+	}
+	.table-wrap {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		border: 1px solid var(--flick-border);
+		border-radius: 0.4rem;
+	}
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.92rem;
+	}
+	th,
+	td {
+		padding: 0.55rem 0.6rem;
+		text-align: left;
+		white-space: nowrap;
+		color: var(--flick-fg);
+	}
+	td:first-child:not(.date):not(.rank) {
+		white-space: normal;
+	}
+	th {
+		background: var(--flick-panel);
+		color: var(--flick-title);
+		font-weight: 600;
+	}
+	tbody tr + tr td {
+		border-top: 1px solid var(--flick-border);
+	}
+	@media (min-width: 36rem) {
+		th,
+		td {
+			padding: 0.6rem 0.85rem;
+		}
+	}
+	.num {
+		text-align: right;
+	}
+	.date,
+	.rank {
+		color: var(--flick-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.nth {
+		display: block;
+		color: var(--flick-muted);
+		font-size: 0.8em;
+	}
+	@media (min-width: 36rem) {
+		.nth {
+			display: inline;
+			margin-left: 0.4rem;
+		}
+	}
+	.flag {
+		font-size: 1.1em;
+	}
+	.help {
+		padding-left: 1.2rem;
+	}
+	.help li {
+		line-height: 1.55;
+		color: var(--flick-fg);
+	}
+	.help li + li {
+		margin-top: 0.75rem;
+	}
+	code {
+		font-family: ui-monospace, 'IBM Plex Mono', monospace;
+	}
+</style>

@@ -1,6 +1,6 @@
 ---
 title: live-build configuration
-description: "live-build reads **`auto/config`** (the build options) and **`config/`** (what"
+description: live-build reads auto/config (the build options) and config/ (what goes into the image). The Debian Live Manual (see 08 – Reference) is the full reference.…
 sidebar:
   order: 3
 ---

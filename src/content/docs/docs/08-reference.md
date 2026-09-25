@@ -1,6 +1,6 @@
 ---
 title: Reference
-description: FlickOS documentation.
+description: "Command cheat sheet, file locations, and quick reference for FlickOS maintainers."
 sidebar:
   order: 8
 ---

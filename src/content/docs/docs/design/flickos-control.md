@@ -1,6 +1,6 @@
 ---
 title: FlickOS Control Center (flickos-control)
-description: "**Status:** Accepted, 2026-09-22. All phases (0 spikes, 1 the hub, 2 input,"
+description: "This document proposes one Settings window for FlickOS, split into phases, and records the design decisions as ADRs (architecture decision records)."
 sidebar:
   order: 1
 ---
@@ -214,6 +214,10 @@ both `auth_admin_keep`). It accepts only fixed verbs:
 
 - `keyboard MODEL LAYOUT VARIANT OPTIONS`: every value is checked against `/usr/share/X11/xkb/rules/evdev.lst`. It rewrites the four `XKB*` lines of `/etc/default/keyboard` (keeping `BACKSPACE` and any other lines), then runs `udevadm trigger --subsystem-match=input --action=change` and `setupcon -k` if present. This is the procedure in keyboard(5). The file belongs to keyboard-configuration, is written by Calamares, and is meant to be edited this way.
 - `autologin-on USER`, `autologin-off`: checks that USER is an existing regular user, and changes membership in the `autologin` group.
+
+Later (phase 5) the helper got `user-add`, `user-remove`, `user-admin` and
+`user-password` for the Users page, one action each; passwords go through
+standard input, never the command line.
 
 **Consequences.** The only new root code is a short helper that can be reviewed
 in one go. The password prompt comes from mate-polkit, which is already running.
@@ -491,6 +495,42 @@ Verified: unit tests (flickos-control 75: parsing of the release file,
 labwc, the page under both styles, and *Copy System Info* checked with
 `wl-paste`. Not yet run: the boot test (it checks `flickos-control about` for
 the version and the packages).
+
+### Phase 5: Users (done 2026-09-24, flickos-control 1.4)
+
+FlickOS had no way to add an account without a terminal (`sudo adduser`,
+then the groups by hand). The **Users** page lists the regular accounts
+(`UID_MIN`..`UID_MAX`) with Administrator (group `sudo`), *Password…* and
+*Remove…*, and an *Add User…* dialog (full name, a user name suggested from
+it, password twice, Administrator). Everything goes through the helper's new
+verbs (ADR-007); the page checks the same rules first so the Add button is
+only active for a valid account.
+
+- **New accounts get the first account's groups**: the installer's
+  `defaultGroups` without `sudo` (audio, video, netdev, bluetooth, …), which
+  plain `adduser` would leave out. A test compares the helper's list with
+  flickos-installer's `users.conf`.
+- **Passwords go through standard input** (`chpasswd`), so they never show up
+  in `ps` or in pkexec's log line.
+- **Guards in the helper**, not only in the page: never the calling user's
+  account, never an account with processes running (`userdel` would leave
+  them), never the last administrator (FlickOS has no root password, so the
+  last member of `sudo` is the only way back in).
+- **Installed systems only**: live accounts are gone at reboot, so the page is
+  hidden with `boot=live`, like Login.
+- Not done: changing a user's own full name or picture (chfn, AccountsService),
+  and the language of an account.
+
+Verified: unit tests (flickos-control 88: the account list, user name
+suggestions and checks, each verb's commands and refusals, the rollback of a
+failed add, the installer's groups); the helper's `user-password`,
+`user-admin` and `user-remove` against the real chpasswd, gpasswd and userdel
+in a user namespace with a private `/etc` (the yescrypt hash written, group
+memberships cleaned up by userdel, the home folder kept); the page and its
+three dialogs in the headless labwc (list, suggestion, hints, disabled
+buttons). `user-add` could not run there (adduser's `chown` to an unmapped
+uid). Not yet run: the whole page on an installed VM with the polkit prompt,
+and the boot test (it checks the four new actions).
 
 ## 5. Risks and open questions
 

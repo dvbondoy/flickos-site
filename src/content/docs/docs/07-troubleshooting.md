@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: "When something fails, first read the **end of `build.log`** (or the CI log)."
+description: "When something fails, first read the end of build.log (or the CI log). The first E: or P: … failed line usually tells you why."
 sidebar:
   order: 7
 ---

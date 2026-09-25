@@ -1,6 +1,6 @@
 ---
 title: FlickOS packages
-description: "FlickOS's own packages live in `packages/`. Each is a **native Debian source"
+description: "FlickOS's own packages live in packages/. Each is a native Debian source package: a folder with a debian/ directory and the files it installs. They have no…"
 sidebar:
   order: 4
 ---
@@ -63,7 +63,7 @@ Default desktop configuration:
 | `etc/xdg/flickos/` | `/etc/xdg/flickos/` | foot, fuzzel and default-app config: `mimeapps.list`, and `xdg-terminals.list` (foot, for `xdg-terminal-exec`) |
 | `usr/share/flickos/` | `/usr/share/flickos/` | waybar and mako config |
 | `usr/share/backgrounds/flickos/default.jpg` | same | Wallpaper for layouts without their own, and without flickos-layouts |
-| `usr/share/glib-2.0/schemas/90_flickos-settings.gschema.override` | same | GTK theme (Arc-Dark), icons (Numix-Circle), fonts, dark mode |
+| `usr/share/glib-2.0/schemas/90_flickos-settings.gschema.override` | same | GTK theme (Arc-Dark), icons (Numix-Circle), fonts, dark mode, title bar buttons of windows that draw their own |
 | `usr/share/themes/FlickOS-Arc-Dark/labwc/themerc` | same | labwc window theme in Arc-Dark colors (arc-theme has none for labwc) |
 | `usr/share/themes/FlickOS-Arc/labwc/themerc` | same | The same in Arc (light) colors, for the Light style |
 
@@ -94,12 +94,12 @@ the chosen layout and style at login and live (see
 
 | File in package | Installed to | Purpose |
 |---|---|---|
-| `usr/bin/flickos-layout` | `/usr/bin/` | Python 3 tool: `list`, `current`, `set`, `style list/current/set`, `clicks list/current/set`, `prepare`, `panel`, `supervise`, `wallpaper`, `doctor`, `pick` (chooser), `first-run` |
+| `usr/bin/flickos-layout` | `/usr/bin/` | Python 3 tool: `list`, `current`, `set`, `style list/current/set`, `clicks list/current/set`, `launcher list/current/set`, `menu-style list/current/set`, `prepare`, `panel`, `supervise`, `wallpaper`, `doctor`, `pick` (chooser), `first-run` |
 | `usr/share/flickos/layouts/ID/` | same | One folder per layout (`redmond`, `cupertino`, `traditional`): `layout.ini`, `waybar.jsonc`, `style.css`, `preview.png`, `wallpaper.jpg` |
 | `debian/links` | `/usr/share/backgrounds/flickos/ID.jpg` | Links to the layouts' wallpapers, for waypaper |
 | `usr/share/flickos/layouts/common/` | same | `modules.jsonc` and `base.css`, shared by every layout |
 | `usr/share/flickos/styles/ID/` | same | One folder per style (`dark`, `light`): `style.ini` (GTK, icon and labwc theme names) and the palettes `waybar-colors.css`, `foot.ini`, `fuzzel.ini`, `mako.conf` |
-| `etc/xdg/flickos/layouts.conf` | same | Default layout, style and desktop clicks (conffile) |
+| `etc/xdg/flickos/layouts.conf` | same | Default layout, style, desktop clicks, apps button and start menu style (conffile) |
 | `usr/share/applications/flickos-layout.desktop` | same | *Desktop Layout & Style* in the app launcher (`flickos-layout pick`) |
 | `etc/skel/.config/flickos/choose-layout` | same | First-login marker: new accounts see the chooser once (`flickos-layout first-run`). Conffile |
 | `debian/flickos-layouts.lintian-overrides` | `/usr/share/lintian/overrides/` | Allows the marker in `/etc/skel` (see below) |
@@ -136,6 +136,13 @@ the chosen layout and style at login and live (see
   flickos-control's `control/environment` (the keyboard layout) it writes an
   overlay `labwc/environment`: the system one's lines (and its `environment.d/`),
   then the fragment's, since labwc reads only the first environment file it finds.
+- **It owns the apps button's choice** (`launcher`: `fuzzel`, the default, or
+  `menu`, flickos-menu's start menu, offered while that is installed). While the
+  start menu is on, it writes the menu's corner (`Menu=` in `layout.ini`) to
+  `menu/anchor`, adds the Super-tap keybinds to the rc.xml overlay, points the
+  generated `custom/launcher` and the desktop clicks at the menu, and runs
+  `flickos-menu daemon` with the panel. While it is off, none of that exists.
+  It doesn't depend on flickos-menu. See [flickos-menu](#flickos-menu).
 - **It depends on `python3-gi` and `gir1.2-gtk-3.0`** for the chooser window.
   GTK 3 follows the Arc theme. zenity (GTK 4/libadwaita) was rejected because
   libadwaita ignores Arc and would add about 12 MB. Both packages were already in
@@ -165,7 +172,7 @@ python3-platformdirs) are all in Debian.
   without its `#!` line.
 - **A Depends of `flickos-desktop`**, not a Recommends, so installed systems
   get it: the Settings menu has an entry for it.
-- **License:** GPL-3+ (`debian/copyright`), unlike FlickOS's own files.
+- **License:** GPL-3+ (`debian/copyright`), like FlickOS's own files.
 
 ### `sfwbar`
 
@@ -252,6 +259,49 @@ go. Also *Settings → Keyboard Shortcuts* and the app launcher
 - **Unit tests** in `tests/` (rc.xml reading, descriptions, the hold timing,
   the Wayland client against a fake compositor), run at package build.
 
+### `flickos-menu`
+
+An optional start menu for the panel's apps button, in the style of the
+desktop layout (`MenuStyle=`): Redmond's is classic (Windows 7: pinned apps,
+All apps by category and search on the left; the user, their folders,
+Settings, Software and the power buttons on the right), Traditional's is
+categories (GNOME 2/Whisker), Cupertino's a full-screen grid of app icons
+(Launchpad). **Off by default**: the apps button opens fuzzel until a user picks *Start menu* under
+*Apps button* in *Settings → Desktop Layout & Style*
+(`flickos-layout launcher set menu`). Design and measurements:
+[design/flickos-menu.md](/docs/design/flickos-menu/).
+
+| File in package | Installed to | Purpose |
+|---|---|---|
+| `usr/bin/flickos-menu` | `/usr/bin/` | One Python 3 file: `daemon`, `toggle`, `show`, `hide`, `super`, `list`, `pinned`, `pin`, `unpin`, `bench` |
+| `usr/share/flickos/menu/style.css` | same | The look, in GTK theme colors only, so both styles recolor it (in `tools/check-palette.py`) |
+| `etc/xdg/flickos/menu.conf` | same | Default pinned apps (conffile). The live session uses flickos-installer's `/etc/xdg/flickos-live/flickos/menu.conf` |
+| `tests/` | not installed | Unit tests |
+
+- **Nothing runs while it is off.** flickos-layouts starts `flickos-menu daemon`
+  with the panel only while the menu is on, and `flickos-layout launcher set
+  fuzzel` stops it. Without `$XDG_RUNTIME_DIR/flickos/menu/anchor` (written by
+  flickos-layouts while the menu is on) `toggle` runs fuzzel and no daemon
+  starts.
+- **Fast:** the daemon keeps the menu built and hidden; the panel button,
+  labwc's Super keybind and desktop clicks reach it with `pkill` (SIGUSR1
+  toggle, SIGUSR2 Super tap, SIGWINCH hide), so no Python starts per click.
+  Showing it takes a few milliseconds; icons are loaded in the background.
+- **A tap of Super** is labwc's `onRelease` keybind; the daemon ignores it
+  unless Super was pressed alone and let go within `TAP_MS` (600 ms), so a hold
+  still shows flickos-shortcuts' sheet.
+- **Costs while on:** about 30 MB of private memory and no CPU while idle.
+- **Pinned apps:** `Pinned=` in the first `flickos/menu.conf` in
+  `XDG_CONFIG_DIRS`, until the user pins or unpins one (right-click an app);
+  then `~/.config/flickos/menu`.
+- **Launching** goes through GLib (`Gio.DesktopAppInfo`), so `Terminal=true`
+  apps open in the user's terminal (xdg-terminal-exec) and folders in their
+  file manager.
+- **A Depends of `flickos-desktop`**, so installed systems get it (a Recommends
+  wouldn't reach them), and in the sanity hook's `REQUIRED`. It depends on
+  `procps` for `pkill`.
+- **Unit tests** in `tests/`, run at package build.
+
 ### `flickos-control`
 
 The Settings window (*Settings → All Settings*, or `flickos-control` in the
@@ -269,7 +319,8 @@ it follows the Dark or Light style. Design and decisions:
   *Power & Idle* (lock and sleep times), *Date & Time* (time zone and network
   time through `timedatectl`, which asks for the password; night-light is
   restarted for the new time zone), *Login* (log in automatically; only on
-  installed systems with flickos-greeter), *Tiling* (on/off, arrangement, main window width, gap, apps that
+  installed systems with flickos-greeter), *Users* (add and remove accounts,
+  administrator or not, set a password; installed systems only), *Tiling* (on/off, arrangement, main window width, gap, apps that
   always float), *Keyboard Shortcuts* (the list, and a button for the sheet) and
   *More Settings* (tiles that start Wallpaper, Appearance, Displays, Network,
   Sound, Bluetooth, Printers and Software Updates; a tile is hidden when its app
@@ -309,6 +360,20 @@ it follows the Dark or Light style. Design and decisions:
   `autologin-off` (actions `org.flickos.control.autologin-on`/`-off`): for
   the user who ran pkexec (`PKEXEC_UID`, a regular account) only, it makes
   them the only member of group `autologin` (`gpasswd -M`), or takes them out.
+- **User accounts** go through the same helper, one action each
+  (`org.flickos.control.user-add`, `-remove`, `-admin`, `-password`):
+  `user-add NAME FULLNAME yes|no` runs `adduser --disabled-password` (so
+  `/etc/skel`, and with it the first-login markers, is copied), sets the
+  password it reads on standard input with `chpasswd` and adds the installer's
+  groups for the first account (`DEFAULT_GROUPS`, flickos-installer's
+  `users.conf` without `sudo`; a test compares them), plus `sudo` for an
+  administrator; if a step fails, the account is removed again. `user-remove
+  NAME keep|delete` runs `userdel [--remove]`, not for the calling user and not
+  while the account has processes running. `user-admin NAME yes|no` changes
+  membership in `sudo` (polkit's and sudo's administrators on Debian).
+  `user-password NAME` reads the password on standard input. Only regular
+  accounts (`UID_MIN`..`UID_MAX` of `/etc/login.defs`), names that match
+  adduser's `NAME_REGEX`, and never away from the last administrator.
 - **For the other settings it owns nothing.** Each page runs the command that owns the setting,
   the same one a user could type: `flickos-layout list|current|set`, `style …`,
   `clicks …` and `doctor` (its warnings are shown on the page),
@@ -394,6 +459,7 @@ packages/flickos-settings/
 └── debian/
     ├── control               name, dependencies, description
     ├── changelog             version history. The top entry IS the version
+    ├── copyright             who owns which files, under which license
     ├── install               "source-path   destination-dir/" lines
     ├── rules                 build script. `dh $@` handles everything
     └── source/format         "3.0 (native)"
@@ -403,6 +469,7 @@ packages/flickos-settings/
 |---|---|
 | `control` | First stanza = source package, then one stanza per binary package. Lines starting with `#` are comments. Use `Architecture: all` for anything without compiled code. `${misc:Depends}` must stay |
 | `changelog` | Strict format, so edit with `dch`, not by hand. The version and distribution come from the top entry |
+| `copyright` | [DEP-5](https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/) format, installed as `/usr/share/doc/PACKAGE/copyright`. `Files: *` is FlickOS's own work, GPL-3+ (the project license, `LICENSE`). Every file that came from elsewhere (a photo, a config copied from a Debian package) gets its own `Files:` stanza with its authors and license, after `Files: *` (the last match wins). Update it when you add such a file |
 | `install` | Paths are relative to the package root. Destination is a directory |
 | `rules` | Must be executable (`chmod +x`). `dh $@` runs the standard debhelper sequence |
 | `source/format` | `3.0 (native)` for all FlickOS packages |
@@ -505,11 +572,14 @@ Then:
    update `Depends:` and `Description:`. The description's first line is a short
    summary. Following lines start with one space, and blank lines are ` .`.
 2. `debian/install`: `usr/share/backgrounds/flickos-extra/*   usr/share/backgrounds/flickos-extra/`
-3. `debian/changelog`: `dch --create --package flickos-wallpapers -v 1.0 -D trixie "Initial release."`
-4. Build: `sh packages/build.sh`.
-5. Make something pull it in, e.g. add `flickos-wallpapers` to
+3. `debian/copyright`: change `Upstream-Name:`, and add a stanza for the
+   photos, since they aren't FlickOS's own work (see `flickos-layouts`' for
+   Unsplash photos).
+4. `debian/changelog`: `dch --create --package flickos-wallpapers -v 1.0 -D trixie "Initial release."`
+5. Build: `sh packages/build.sh`.
+6. Make something pull it in, e.g. add `flickos-wallpapers` to
    `flickos-desktop`'s `Depends:` (or `Recommends:`) and bump that package's version too.
-6. Publish both. See [05](/docs/05-apt-repository/).
+7. Publish both. See [05](/docs/05-apt-repository/).
 
 ## Checking quality with lintian (optional)
 
@@ -520,5 +590,4 @@ sudo apt install lintian
 lintian config/packages.chroot/flickos-settings_*.deb
 ```
 
-Warnings like missing `debian/copyright` or `no-manual-page` are expected for
-small distro packages. Errors (`E:`) are worth fixing.
+Warnings like `no-manual-page` are expected for small distro packages. Errors (`E:`) are worth fixing.
