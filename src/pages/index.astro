@@ -4,53 +4,14 @@ import MarketingLayout from '../layouts/MarketingLayout.astro';
 import redmond from '../assets/screenshots/layout-redmond.png';
 import cupertino from '../assets/screenshots/layout-cupertino.png';
 import traditional from '../assets/screenshots/layout-traditional.png';
+import history from '../assets/screenshots/history.png';
+import { highlights } from '../data/features';
 
 const specs = [
 	{ label: 'Debian 13', detail: 'trixie · Linux 6.12 LTS' },
 	{ label: 'labwc Wayland', detail: 'lightweight compositor' },
 	{ label: 'amd64', detail: 'BIOS + UEFI hybrid ISO' },
 	{ label: '~1.4 GB', detail: 'live ISO + Calamares' },
-];
-
-const features = [
-	{
-		title: 'Three live layouts',
-		body: 'Redmond, Cupertino, and Traditional — switch from Settings without logging out.',
-	},
-	{
-		title: 'One Settings window',
-		body: 'All Settings covers layout, input, tiling, defaults, power and idle, date and time (network clock), login, user accounts, shortcuts, and About.',
-	},
-	{
-		title: 'Optional start menu',
-		body: 'Off by default. Turn it on in Settings → Desktop Layout & Style and tap Super to open it: a classic menu in Redmond, categories in Traditional, a full-screen app grid in Cupertino.',
-	},
-	{
-		title: 'Hold Super for shortcuts',
-		body: 'Press and hold Super for about 0.7s to see the shortcut sheet; let go to close. Also under Settings → Keyboard Shortcuts.',
-	},
-	{
-		title: 'Arc look everywhere',
-		body: 'GTK, panel, terminal, launcher, notifications, boot menu, splash, and installer share the Arc palette. Light style available.',
-	},
-	{
-		title: 'Optional tiling',
-		body: 'flick-tiler is off by default. Super+T toggles it; Super+M cycles arrangements.',
-		href: '/screenshots/#tiling',
-		linkLabel: 'See tiling screenshots',
-	},
-	{
-		title: 'Ready to use',
-		body: 'Firefox ESR with uBlock Origin, LibreOffice, VLC, Software manager (PackageKit), PipeWire, NetworkManager, Flatpak, firewall on by default.',
-	},
-	{
-		title: 'Updates that stick',
-		body: 'FlickOS packages update via the apt repository alongside normal Debian security updates. Install app updates from Settings → Software Updates.',
-	},
-	{
-		title: 'Install when ready',
-		body: 'Boot the live session, explore, then install with Calamares from the desktop menu. At first login a welcome window points you to layouts, Settings, Wi-Fi, and shortcuts.',
-	},
 ];
 
 const layouts = [
@@ -73,7 +34,7 @@ const layouts = [
 
 const keys = [
 	{ key: 'Hold Super', action: 'Shortcut sheet' },
-	{ key: 'Tap Super', action: 'Start menu (when turned on)' },
+	{ key: 'Tap Super', action: 'Start menu' },
 	{ key: 'Super+Enter', action: 'Terminal' },
 	{ key: 'Super+D', action: 'App launcher' },
 	{ key: 'Super+E', action: 'File manager' },
@@ -93,6 +54,7 @@ const keys = [
 	<section class="hero" aria-label="FlickOS">
 		<div class="hero-copy flick-anim-rise">
 			<p class="brand flick-display">FlickOS</p>
+			<a class="pill" href="#undo"><span class="pill-tag">New</span> An Undo button for every change</a>
 			<h1 class="flick-display">A light Debian desktop that feels finished.</h1>
 			<p class="lede">
 				Version 2.0 on Debian 13 with a labwc Wayland session, Arc theming, and a live ISO you can install when you are ready.
@@ -135,11 +97,11 @@ const keys = [
 		</div>
 		<ul class="feature-list">
 			{
-				features.map((f) => (
+				highlights.map((f) => (
 					<li>
 						<h3>{f.title}</h3>
 						<p>{f.body}</p>
-						{'href' in f && f.href ? (
+						{f.href ? (
 							<p class="feature-link">
 								<a href={f.href}>{f.linkLabel}</a>
 							</p>
@@ -148,6 +110,40 @@ const keys = [
 				))
 			}
 		</ul>
+		<p class="more">
+			<a href="/features/">See all features</a>
+		</p>
+	</section>
+
+	<section class="section undo" id="undo">
+		<div class="undo-grid">
+			<div class="undo-copy">
+				<p class="eyebrow">Settings → History</p>
+				<h2 class="flick-display">Every change has an Undo button</h2>
+				<p class="undo-lede">
+					Tried a new layout? Turned on tiling by accident? Removed an app you needed? History lists what changed, in plain words and newest first, with Undo next to each change.
+				</p>
+				<ul class="undo-points">
+					<li><strong>Settings.</strong> Layout, style, tiling, input, power, default and startup apps, firewall, updates — whether you changed them in Settings, with a key, or in a terminal.</li>
+					<li><strong>Software.</strong> Installs and removals from Software or apt. Undo shows what it will do before it asks for your password.</li>
+					<li><strong>Put Back as It Was…</strong> Returns your settings to how they were on an earlier day, and that can be undone too.</li>
+				</ul>
+				<div class="undo-note">
+					<h3>How is this different from snapshots?</h3>
+					<p>
+						Timeshift and Snapper roll the whole system back to a point in time. History undoes one change and leaves the rest alone — no snapshots, no reboot, no terminal, and nothing running in the background. As far as we know, no other Linux desktop has an undo list for its own settings.
+					</p>
+				</div>
+			</div>
+			<figure class="undo-shot">
+				<Image
+					src={history}
+					alt="FlickOS Settings window on the History page: installed and removed packages listed by day, each with an Undo button"
+					widths={[640, 960, 1366]}
+					sizes="(max-width: 64rem) 100vw, 55vw"
+				/>
+			</figure>
+		</div>
 	</section>
 
 	<section class="section layouts">
@@ -237,6 +233,33 @@ const keys = [
 		font-size: 1.05rem;
 		line-height: 1.55;
 		color: var(--flick-muted);
+	}
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0 0 1rem;
+		padding: 0.3rem 0.85rem 0.3rem 0.35rem;
+		border: 1px solid var(--flick-border);
+		border-radius: 999px;
+		background: var(--flick-panel);
+		color: var(--flick-fg) !important;
+		font-size: 0.9rem;
+		text-decoration: none !important;
+	}
+	.pill:hover,
+	.pill:focus-visible {
+		border-color: var(--flick-accent);
+	}
+	.pill-tag {
+		padding: 0.1rem 0.5rem;
+		border-radius: 999px;
+		background: var(--flick-accent);
+		color: var(--flick-accent-fg);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
 	}
 	.cta {
 		margin-top: 1.5rem;
@@ -351,6 +374,86 @@ const keys = [
 		margin-top: 0.5rem !important;
 		opacity: 1 !important;
 		font-size: 0.95rem;
+	}
+	.undo {
+		scroll-margin-top: 4.5rem;
+	}
+	.undo-grid {
+		display: grid;
+		gap: 2rem;
+		align-items: center;
+	}
+	@media (min-width: 64rem) {
+		.undo-grid {
+			grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+			gap: 2.5rem;
+		}
+	}
+	.eyebrow {
+		margin: 0 0 0.4rem;
+		color: var(--flick-accent);
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+	}
+	.undo-copy h2 {
+		margin: 0;
+		font-size: clamp(1.6rem, 3vw, 2rem);
+		color: var(--flick-title);
+		line-height: 1.2;
+	}
+	.undo-lede {
+		margin: 0.75rem 0 0;
+		font-size: 1.05rem;
+		line-height: 1.55;
+		color: var(--flick-fg);
+	}
+	.undo-points {
+		margin: 1.25rem 0 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.75rem;
+	}
+	.undo-points li {
+		padding-left: 0.9rem;
+		border-left: 2px solid var(--flick-accent);
+		line-height: 1.5;
+		color: var(--flick-fg);
+		opacity: 0.9;
+	}
+	.undo-points strong {
+		color: var(--flick-title);
+	}
+	.undo-note {
+		margin-top: 1.5rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid var(--flick-border);
+		border-radius: 0.4rem;
+		background: var(--flick-panel);
+	}
+	.undo-note h3 {
+		margin: 0 0 0.35rem;
+		font-size: 1rem;
+		color: var(--flick-title);
+	}
+	.undo-note p {
+		margin: 0;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		color: var(--flick-muted);
+	}
+	.undo-shot {
+		margin: 0;
+		line-height: 0;
+		border: 1px solid var(--flick-border);
+		background: var(--flick-panel);
+	}
+	.undo-shot :global(img) {
+		width: 100%;
+		height: auto;
+		display: block;
 	}
 	.layout-grid {
 		list-style: none;

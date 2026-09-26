@@ -25,11 +25,11 @@ export const donate = {
 	href: '/donate/',
 
 	// Monthly total banner ("So far in September 2026: ..."). Update by hand; set amount to 0 to hide it.
-	// Counts every donation, including anonymous ones that aren't listed. EXAMPLE values below.
+	// Counts every donation, including anonymous ones that aren't listed.
 	thisMonth: {
 		month: '2026-09', // YYYY-MM
-		amount: 68,
-		count: 12,
+		amount: 0,
+		count: 0,
 	},
 
 	// One-time donations. These donors are listed on the donate page.
@@ -54,7 +54,7 @@ export const donate = {
 			id: 'patreon',
 			label: 'Patreon',
 			blurb: 'Support FlickOS every month.',
-			url: 'https://www.patreon.com/PLACEHOLDER',
+			url: 'https://www.patreon.com/flickos',
 		},
 	] satisfies DonateLink[],
 

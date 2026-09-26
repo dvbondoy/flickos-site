@@ -4,10 +4,11 @@
  *
  * - Injects YAML frontmatter (title, description, sidebar.order)
  * - Strips the leading `# NN – Title` heading (becomes the page title)
+ * - Resolves relative links from each doc's own folder
  * - Rewrites cross-doc links: 04-packages.md → /docs/04-packages/
- * - Rewrites design/*.md → /docs/design/.../
- * - Rewrites docs/-prefixed links the same way
- * - Rewrites repo-relative paths to GitHub blob URLs
+ * - Rewrites hig/*.md → /docs/hig/.../
+ * - Rewrites links to other repo files to GitHub URLs
+ * - design/ is internal and not published; links to it go to GitHub
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,15 +20,18 @@ const SRC =
 	process.env.FLICKOS_DOCS_PATH ??
 	path.resolve(ROOT, '../flickos/docs');
 const DEST = path.join(ROOT, 'src/content/docs/docs');
-const DESIGN_DEST = path.join(DEST, 'design');
-const GITHUB_BLOB = 'https://github.com/dvbondoy/FlickOS/blob/main';
+const HIG_DEST = path.join(DEST, 'hig');
+const GITHUB = 'https://github.com/dvbondoy/FlickOS';
 
-const DOC_FILE = /^(?:docs\/)?(\d{2}-[a-z0-9-]+)\.md(#.*)?$/i;
-const DESIGN_FILE = /^(?:docs\/)?design\/([a-z0-9-]+)\.md(#.*)?$/i;
+/** Links already written from the repo root (e.g. `packages/foo`), not relative to the doc. */
+const REPO_ROOT_LINK = /^(?:auto|config|docs|packages|repo|tools)\//;
 
-/** Paths that live in the product repo, not on the site. */
-const REPO_PATH =
-	/^(?:\.\.\/)*(?:LICENSE|README\.md|RELEASE_NOTES\.md|auto\/|config\/|packages\/|tools\/|repo\/|docs\/(?!\d|design\/))/;
+/** Repo path of a published doc → its site URL. */
+const SITE_PAGES = [
+	[/^docs\/(\d{2}-[a-z0-9-]+)\.md$/i, (m) => `/docs/${m[1]}/`],
+	[/^docs\/hig\/README\.md$/i, () => '/docs/hig/'],
+	[/^docs\/hig\/([a-z0-9-]+)\.md$/i, (m) => `/docs/hig/${m[1].toLowerCase()}/`],
+];
 
 function titleFromHeading(heading, { numbered = true } = {}) {
 	if (numbered) {
@@ -55,9 +59,14 @@ const FALLBACK_DESCRIPTIONS = {
 
 /** Markdown inline syntax → plain text, for meta descriptions. */
 function plainText(md) {
+	// Set code spans aside so emphasis stripping keeps e.g. the * in `flickos-*`.
+	const code = [];
 	return md
 		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-		.replace(/\*\*|`/g, '')
+		.replace(/`([^`]*)`/g, (_, text) => `\0${code.push(text) - 1}\0`)
+		.replace(/\*\*/g, '')
+		.replace(/\*(\S(?:[^*]*\S)?)\*/g, '$1')
+		.replace(/\0(\d+)\0/g, (_, i) => code[i])
 		.replace(/\s+/g, ' ')
 		.trim();
 }
@@ -77,46 +86,40 @@ function descriptionFromBody(body, filename) {
 		buf.push(line.trim());
 	}
 	if (buf.length) paras.push(buf.join(' '));
-	// Design docs open with a status line; the next paragraph says what they are.
+	// Some docs open with a status line; the next paragraph says what they are.
 	const intro = paras.find((p) => !p.startsWith('**Status:**'));
 	let desc = intro ? plainText(intro) : FALLBACK_DESCRIPTIONS[filename] ?? 'FlickOS documentation.';
 	if (desc.length > 160) desc = desc.slice(0, 157).replace(/\s+\S*$/, '') + '…';
 	return desc;
 }
 
-function rewriteHref(href) {
-	if (!href || href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
-		return href;
-	}
-	if (href.startsWith('#')) return href;
+/**
+ * `fromDir` is the linking doc's folder in the product repo (`docs`, `docs/hig`).
+ * Other docs become site URLs; any other repo file becomes a GitHub URL.
+ */
+function rewriteHref(href, fromDir) {
+	if (!href || /^[a-z]+:/i.test(href) || href.startsWith('#')) return href;
 
-	const designMatch = href.match(DESIGN_FILE);
-	if (designMatch) {
-		const slug = designMatch[1];
-		const hash = designMatch[2] || '';
-		return `/docs/design/${slug}/${hash}`;
-	}
+	const hashAt = href.indexOf('#');
+	const bare = hashAt === -1 ? href : href.slice(0, hashAt);
+	const hash = hashAt === -1 ? '' : href.slice(hashAt);
 
-	const docMatch = href.match(DOC_FILE);
-	if (docMatch) {
-		const slug = docMatch[1];
-		const hash = docMatch[2] || '';
-		return `/docs/${slug}/${hash}`;
-	}
+	const repoPath = REPO_ROOT_LINK.test(bare)
+		? path.posix.normalize(bare)
+		: path.posix.normalize(path.posix.join(fromDir, bare));
+	if (repoPath.startsWith('../')) return href;
 
-	const bare = href.split('#')[0];
-	const hash = href.includes('#') ? '#' + href.split('#').slice(1).join('#') : '';
-	if (REPO_PATH.test(bare) || bare === 'LICENSE' || bare === 'README.md') {
-		const cleaned = bare.replace(/^\.\.\//, '');
-		return `${GITHUB_BLOB}/${cleaned}${hash}`;
+	for (const [pattern, url] of SITE_PAGES) {
+		const m = repoPath.match(pattern);
+		if (m) return url(m) + hash;
 	}
-
-	return href;
+	const kind = repoPath.endsWith('/') ? 'tree' : 'blob';
+	return `${GITHUB}/${kind}/main/${repoPath}${hash}`;
 }
 
-function rewriteLinks(markdown) {
+function rewriteLinks(markdown, fromDir) {
 	return markdown.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (full, text, href) => {
-		const next = rewriteHref(href.trim());
+		const next = rewriteHref(href.trim(), fromDir);
 		return `[${text}](${next})`;
 	});
 }
@@ -142,33 +145,14 @@ function splitHeading(raw, filename) {
 	return { heading, body };
 }
 
-function processNumberedFile(filename) {
-	const order = Number(filename.slice(0, 2));
-	const raw = fs.readFileSync(path.join(SRC, filename), 'utf8');
-	const { heading, body } = splitHeading(raw, filename);
-	const title = titleFromHeading(heading, { numbered: true });
+/** `relPath` is relative to SRC, e.g. `04-packages.md` or `hig/01-principles.md`. */
+function processFile(relPath, order) {
+	const filename = path.basename(relPath);
+	const raw = fs.readFileSync(path.join(SRC, relPath), 'utf8');
+	const { heading, body } = splitHeading(raw, relPath);
+	const title = titleFromHeading(heading, { numbered: /^\d{2}-/.test(filename) });
 	const description = descriptionFromBody(body, filename);
-	const rewritten = rewriteLinks(body);
-
-	const frontmatter = [
-		'---',
-		`title: ${yamlEscape(title)}`,
-		`description: ${yamlEscape(description)}`,
-		'sidebar:',
-		`  order: ${order}`,
-		'---',
-		'',
-	].join('\n');
-
-	return frontmatter + rewritten;
-}
-
-function processDesignFile(filename, order) {
-	const raw = fs.readFileSync(path.join(SRC, 'design', filename), 'utf8');
-	const { heading, body } = splitHeading(raw, `design/${filename}`);
-	const title = titleFromHeading(heading, { numbered: false });
-	const description = descriptionFromBody(body, filename);
-	const rewritten = rewriteLinks(body);
+	const rewritten = rewriteLinks(body, path.posix.join('docs', path.posix.dirname(relPath)));
 
 	const frontmatter = [
 		'---',
@@ -202,10 +186,10 @@ function main() {
 		process.exit(1);
 	}
 
-	fs.mkdirSync(DEST, { recursive: true });
-	fs.mkdirSync(DESIGN_DEST, { recursive: true });
-	clearMarkdown(DEST);
-	clearMarkdown(DESIGN_DEST);
+	for (const dir of [DEST, HIG_DEST]) {
+		fs.mkdirSync(dir, { recursive: true });
+		clearMarkdown(dir);
+	}
 
 	const files = fs
 		.readdirSync(SRC)
@@ -219,26 +203,32 @@ function main() {
 
 	let linkCount = 0;
 	for (const file of files) {
-		const out = processNumberedFile(file);
+		const out = processFile(file, Number(file.slice(0, 2)));
 		linkCount += (out.match(/\]\(\/docs\//g) || []).length;
 		fs.writeFileSync(path.join(DEST, file), out);
 		console.log(`wrote docs/${file}`);
 	}
 
-	const designDir = path.join(SRC, 'design');
-	const designFiles = fs.existsSync(designDir)
+	// HIG: README is the section's landing page, numbered pages next, then checklist and audit.
+	const higDir = path.join(SRC, 'hig');
+	const higFiles = fs.existsSync(higDir)
 		? fs
-				.readdirSync(designDir)
+				.readdirSync(higDir)
 				.filter((f) => /^[a-z0-9-]+\.md$/i.test(f))
 				.sort()
 		: [];
-
-	designFiles.forEach((file, idx) => {
-		const out = processDesignFile(file, idx + 1);
-		linkCount += (out.match(/\]\(\/docs\//g) || []).length;
-		fs.writeFileSync(path.join(DESIGN_DEST, file), out);
-		console.log(`wrote docs/design/${file}`);
-	});
+	const HIG_TAIL = ['checklist.md', 'audit.md'];
+	const higRank = (f) =>
+		f === 'README.md' ? 0 : /^\d{2}-/.test(f) ? Number(f.slice(0, 2)) : 100 + HIG_TAIL.indexOf(f);
+	higFiles
+		.sort((a, b) => higRank(a) - higRank(b) || a.localeCompare(b))
+		.forEach((file, idx) => {
+			const out = processFile(`hig/${file}`, idx);
+			const destName = file === 'README.md' ? 'index.md' : file.toLowerCase();
+			linkCount += (out.match(/\]\(\/docs\//g) || []).length;
+			fs.writeFileSync(path.join(HIG_DEST, destName), out);
+			console.log(`wrote docs/hig/${destName}`);
+		});
 
 	// Small docs landing page
 	const index = `---
@@ -250,10 +240,12 @@ sidebar:
 ---
 
 Welcome to the FlickOS documentation. Start with [Overview](/docs/01-overview/) if you are new to the repository.
+
+Adding or changing a FlickOS program? Follow the [Human Interface Guidelines](/docs/hig/).
 `;
 	fs.writeFileSync(path.join(DEST, 'index.mdx'), index);
 	console.log(
-		`synced ${files.length} docs + ${designFiles.length} design → ${path.relative(ROOT, DEST)} (${linkCount} /docs/ links)`,
+		`synced ${files.length} docs + ${higFiles.length} hig → ${path.relative(ROOT, DEST)} (${linkCount} /docs/ links)`,
 	);
 }
 

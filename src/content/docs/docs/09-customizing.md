@@ -159,11 +159,18 @@ on tty1 only.
 | `flickos-shortcuts daemon` | Keyboard shortcut sheet while Super is held | Only if installed ([Shortcut sheet](#shortcut-sheet-hold-super)) |
 | `flickos-layout first-run` | Desktop Layout & Style chooser at the first login of a new account | Only if flickos-layouts is installed; never in the live session ([First login](#first-login)) |
 | `flickos-control idle` (swayidle) | Lock and suspend after the times in *Settings → Power & Idle* (default 5 and 15 min); a fixed swayidle without flickos-control | **Not in the live session**, so installs are never interrupted |
+| `flickos-control startup run` | The XDG autostart entries (*Settings → Startup Applications*): `~/.config/autostart`, then `/etc/xdg/flickos/autostart` and `/etc/xdg/autostart` | Last. Waits up to 10 s for the tray |
 
 **To add a startup program**, add a line to
 `packages/flickos-settings/usr/libexec/flickos/autostart`. End it with `&`
 unless it exits immediately. Use `if command -v PROGRAM >/dev/null; then … fi`
-for anything in `Recommends:`, which users may uninstall.
+for anything in `Recommends:`, which users may uninstall. If the program's
+package also installs an entry in `/etc/xdg/autostart`, hide it with a file of
+the same name and `Hidden=true` in
+`packages/flickos-settings/etc/xdg/flickos/autostart/`, or it starts twice. A
+program users may choose to run (a tray applet) can instead stay an XDG
+autostart entry; an override there with `X-GNOME-Autostart-enabled=false`
+makes it off by default and switchable in Settings.
 
 **Why a separate script:** labwc only reads the first `autostart` it finds. A
 user who creates `~/.config/labwc/autostart` would lose the whole FlickOS
@@ -415,6 +422,7 @@ A sibling that hangs costs a warning, never the panel.
 | `flickos-layout panel` | Starts mako with the generated notification config, generates the panel files, starts the layout's dock (sfwbar), then stays on as waybar's [supervisor](#keeping-the-panel-running) (autostart). If anything goes wrong it starts flickos-settings' default panel and notification config. A user's own waybar or mako config is used as is |
 | `flickos-layout supervise -- COMMAND …` | Runs one panel program and restarts it when it fails. Started by `panel` and `set`, not meant to be typed |
 | `flickos-layout doctor` | Lists user config that stops a layout or style from applying. Exit code 1 if it finds any |
+| `flickos-layout state` | Every choice (layouts, styles, clicks, apps button, menu style), the ones in use and `doctor`'s warnings as one JSON object. The Settings window reads its layout page with it |
 | `flickos-layout pick` | Opens the [chooser](#the-chooser) |
 | `flickos-layout first-run` | Opens the chooser if this is a new account's [first login](#first-login). Run by autostart |
 
@@ -581,16 +589,17 @@ instead: every click also closes the menu, and `left-launcher` opens the menu.
 
 ### Start menu
 
-An optional classic start menu for the apps button (package `flickos-menu`,
-see [04](/docs/04-packages/#flickos-menu) and
-[design/flickos-menu.md](/docs/design/flickos-menu/)). **Off by default**: the apps
-button and Super+D open fuzzel. A user turns it on under *Apps button* in
-*Settings → Desktop Layout & Style*, or:
+A classic start menu for the apps button (package `flickos-menu`, see
+[04](/docs/04-packages/#flickos-menu) and
+[design/flickos-menu.md](https://github.com/dvbondoy/FlickOS/blob/main/docs/design/flickos-menu.md)). **On by default**: the apps
+button and a tap of Super open it; Super+D stays fuzzel. A user switches it
+under *Apps button* in *Settings → Desktop Layout & Style*, or:
 
 ```sh
 flickos-layout launcher list          # fuzzel, and menu while flickos-menu is installed
-flickos-layout launcher set menu      # on: applies at once
-flickos-layout launcher set fuzzel    # off again: the menu's daemon stops
+flickos-layout launcher set fuzzel    # off: the menu's daemon stops, applies at once
+flickos-layout launcher set menu      # on again
+flickos-layout launcher set default   # back to the system default (the menu)
 ```
 
 While it is on, for a layout with a `Menu=` corner:
@@ -638,8 +647,9 @@ has *Install FlickOS* first; keep the rest the same. A user who pins or unpins
 an app (right-click it, or `flickos-menu pin|unpin ID`) gets their own list in
 `~/.config/flickos/menu`.
 
-**Make it the default for everyone:** `Launcher=menu` in
-`packages/flickos-layouts/etc/xdg/flickos/layouts.conf`.
+**Make fuzzel the default for everyone again:** `Launcher=fuzzel` in
+`packages/flickos-layouts/etc/xdg/flickos/layouts.conf` (or on one machine in
+`/etc/xdg/flickos/layouts.conf`).
 
 **Other changes** are in `packages/flickos-menu/usr/bin/flickos-menu`:
 `SECTIONS` (All apps' categories), `TOOLS` and `POWER` (right column), `PLACES`
@@ -761,9 +771,10 @@ its icon theme), notifications, and **new** terminal windows.
 **What doesn't:**
 
 - Open foot windows keep their colors until they're closed.
-- Boot menus, boot splash, installer and the lock screen (`swaylock -c`) are
-  always Arc-Dark, and so is the wallpaper's fill color. They run before or
-  outside the user session.
+- Boot menus, boot splash, installer and the lock screen's color (`swaylock
+  -c`, unless *Settings → Power & Idle* shows the wallpaper there) are always
+  Arc-Dark, and so is the wallpaper's fill color. They run before or outside
+  the user session.
 - libadwaita apps always look like Adwaita
   ([GTK theme](#gtk-theme-icons-cursor-fonts-dark-mode)); with Light they at
   least follow `color-scheme`.
@@ -1126,6 +1137,7 @@ agree. Mouse, touchpad and keyboard settings are flickos-control's own.
 | Default Applications | `xdg-mime default APP TYPES…`; the terminal: `~/.config/xdg-terminals.list` |
 | Date & Time | `timedatectl set-timezone`, `set-ntp` |
 | Login | `pkexec /usr/libexec/flickos/control-helper autologin-on`, `autologin-off` |
+| Firewall | `pkexec /usr/libexec/flickos/control-helper firewall-on`, `firewall-off` (`ufw --force enable`, `ufw disable`); state from `/etc/ufw/ufw.conf` |
 | About | `flickos-control about` (also `lspci`, `dpkg-query`); *Copy System Info*: `wl-copy` |
 | Tiling | `flick-tiler status/modes/on/off/mode/ratio/gap/floating` |
 | Keyboard Shortcuts | `flickos-shortcuts list`, `show` |
@@ -1154,7 +1166,7 @@ agree. Mouse, touchpad and keyboard settings are flickos-control's own.
   `packages/flickos-layouts` to see the layout previews from the tree.
 
 The design and its decisions are in
-[design/flickos-control.md](/docs/design/flickos-control/).
+[design/flickos-control.md](https://github.com/dvbondoy/FlickOS/blob/main/docs/design/flickos-control.md).
 
 ---
 
@@ -1248,7 +1260,7 @@ bindings follow, and replace defaults that use the same key.
 | `Super+B` | Web browser | FlickOS |
 | `Super+V` | Clipboard history | FlickOS |
 | `Super+Q`, `Alt+F4` | Close window | FlickOS, labwc |
-| `Super+L` | Lock screen | FlickOS |
+| `Super+L` | Lock screen (`/usr/libexec/flickos/lock`: the background chosen in *Settings → Power & Idle*) | FlickOS |
 | `Super+Shift+E` | Log out | FlickOS |
 | `Super+T` | Window tiling on/off; more keys while it is on ([Window tiling](#window-tiling)) | FlickOS |
 | `Print` / `Shift+Print` | Screenshot of region / whole screen → `~/Pictures/Screenshots` | FlickOS |
@@ -1303,7 +1315,7 @@ says about a binding:
 
 Try it without building: `flickos-shortcuts list` prints what the sheet shows
 (`--file` for another rc.xml). The hold time is `HOLD_MS`, the look
-`usr/share/flickos/shortcuts/style.css` (Arc-Dark colors only).
+`usr/share/flickos/shortcuts/style.css` (the GTK theme's named colors only, so the Light style recolors it).
 
 It can't tell a long press of Super alone from Super held while pressing
 other keys (labwc sends it only the modifiers), so holding Super through
@@ -1325,7 +1337,7 @@ Debian already ships a file there.
 | fuzzel | `etc/xdg/flickos/fuzzel/fuzzel.ini` | `XDG_CONFIG_DIRS`; included by the style overlay | `man fuzzel.ini` |
 | Default apps | `etc/xdg/flickos/mimeapps.list` | `XDG_CONFIG_DIRS` | [Default apps](#b-which-app-opens-which-file-type) |
 | pcmanfm | `etc/xdg/flickos/pcmanfm/default/pcmanfm.conf` | `XDG_CONFIG_DIRS` | Debian's `/etc/xdg/pcmanfm/default/pcmanfm.conf` |
-| Night light | `usr/libexec/flickos/night-light` | Script started from autostart | `man wlsunset` |
+| Night light | `usr/libexec/flickos/night-light` | Script started from autostart (through `flickos-control night-light`) | `man wlsunset` |
 | waybar | flickos-layouts: `usr/share/flickos/layouts/ID/`, `common/`, `styles/ID/waybar-colors.css` (fallback: flickos-settings' `usr/share/flickos/waybar/`) | Files generated in `$XDG_RUNTIME_DIR/flickos/waybar/`, paths passed by `flickos-layout panel` | [waybar](#waybar-panel), `man waybar`, `man waybar-styles` |
 | mako | `usr/share/flickos/mako/config` | Included by `$XDG_RUNTIME_DIR/flickos/mako/config`, passed by `flickos-layout panel` | `man 5 mako` |
 | GTK apps | `usr/share/glib-2.0/schemas/90_flickos-settings.gschema.override` | GSettings override | `man glib-compile-schemas` |
@@ -1532,10 +1544,16 @@ coordinates are those of the zone's reference city, e.g. Berlin for
 `Europe/Berlin`, which is accurate enough for sunset times. Nothing is looked
 up online.
 
+autostart runs it through `flickos-control night-light`, which adds `-t`
+for the warmth chosen in *Settings → Displays* and doesn't run it at all
+while night light is off there; the script passes its options on to wlsunset.
+
 - **Change the fallback times** (used when there is no time zone): the
-  `wlsunset -S 06:30 -s 18:30` line.
-- **Change the color temperature:** add `-t 4000` (night, default 4000 K) or
-  `-T 6500` (day) to both `wlsunset` lines.
+  `-S 06:30 -s 18:30` line.
+- **Change the default warmth or turn it off for everyone:**
+  `/etc/xdg/flickos/night-light.conf` (`Temperature=`, 2500–6000 K, and
+  `Enabled=`); users' own choices win. The day temperature (`-T`, 6500 K)
+  can be added in the script.
 - **Users** who want exact coordinates put `pkill wlsunset; wlsunset -l LAT -L LON &`
   in their own `~/.config/labwc/autostart` (after calling the FlickOS script).
 - **Test the lookup** on any machine: `sh usr/libexec/flickos/night-light` with a
@@ -1776,7 +1794,9 @@ Because the hook runs at build time, the firewall is on for the live session and
 all installed systems. Existing systems that only receive `ufw` through
 `apt upgrade` keep it off, which is ufw's own default.
 
-**Users** manage it in a terminal:
+**Users** turn it on or off on the *Firewall* page of the Settings window
+([Settings window](#settings-window); administrator password). Rules need a
+terminal:
 ```sh
 sudo ufw status verbose
 sudo ufw allow 22/tcp          # e.g. allow SSH

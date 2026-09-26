@@ -1,0 +1,102 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import { features } from '../data/features';
+---
+
+<MarketingLayout
+	title="Features"
+	description="What ships in FlickOS 2.0: one Settings window, the start menu, the hold-Super shortcut sheet, the Arc look, and ready-to-use apps."
+>
+	<section class="page">
+		<header class="page-head flick-anim-rise">
+			<h1 class="flick-display">Features</h1>
+			<p>
+				Beyond <a href="/">layouts, tiling, and history</a> — what else ships in FlickOS 2.0, the same stack the ISO boots.
+			</p>
+		</header>
+
+		<ul class="feature-list">
+			{
+				features.map((f) => (
+					<li>
+						<h2>{f.title}</h2>
+						<p>{f.body}</p>
+						{f.href ? (
+							<p class="feature-link">
+								<a href={f.href}>{f.linkLabel}</a>
+							</p>
+						) : null}
+					</li>
+				))
+			}
+		</ul>
+
+		<p class="cta-row">
+			<a class="flick-btn primary" href="/download/">Download FlickOS</a>
+			<a class="flick-btn ghost" href="/docs/09-customizing/">Customizing guide</a>
+		</p>
+	</section>
+</MarketingLayout>
+
+<style>
+	.page {
+		max-width: 72rem;
+		margin: 0 auto;
+		padding: 1.75rem 1.25rem 0;
+	}
+	@media (min-width: 48rem) {
+		.page {
+			padding-top: 2.5rem;
+		}
+	}
+	.page-head h1 {
+		margin: 0;
+		font-size: clamp(1.75rem, 7vw, 2.75rem);
+		color: var(--flick-title);
+		line-height: 1.15;
+	}
+	.page-head p {
+		margin: 0.6rem 0 0;
+		color: var(--flick-muted);
+		max-width: 36rem;
+	}
+	.feature-list {
+		list-style: none;
+		margin: 2.5rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 1.75rem 2rem;
+	}
+	@media (min-width: 48rem) {
+		.feature-list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (min-width: 64rem) {
+		.feature-list {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+	.feature-list h2 {
+		margin: 0 0 0.4rem;
+		font-size: 1.05rem;
+		color: var(--flick-title);
+	}
+	.feature-list p {
+		margin: 0;
+		line-height: 1.5;
+		color: var(--flick-fg);
+		opacity: 0.9;
+	}
+	.feature-link {
+		margin-top: 0.5rem !important;
+		opacity: 1 !important;
+		font-size: 0.95rem;
+	}
+	.cta-row {
+		margin: 3rem 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+</style>

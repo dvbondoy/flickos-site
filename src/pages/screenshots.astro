@@ -10,6 +10,7 @@ import styleLight from '../assets/screenshots/style-light.png';
 import tilingGrid from '../assets/screenshots/tiling-grid.png';
 import tilingColumns from '../assets/screenshots/tiling-columns.png';
 import tilingMasterStack from '../assets/screenshots/tiling-master-stack.png';
+import history from '../assets/screenshots/history.png';
 
 const layouts = [
 	{ title: 'Redmond', image: redmond, caption: 'Default bottom panel with window list and tray.' },
@@ -26,7 +27,7 @@ const tiling = [
 
 <MarketingLayout
 	title="Screenshots"
-	description="FlickOS 2.0 layouts, window tiling, dark and light styles, and the layout chooser — captured from a live QEMU session."
+	description="FlickOS 2.0 layouts, window tiling, the History page, dark and light styles, and the layout chooser — captured from a live QEMU session."
 >
 	<section class="page">
 		<header class="page-head flick-anim-rise">
@@ -79,6 +80,19 @@ const tiling = [
 					))
 				}
 			</ul>
+		</section>
+
+		<section class="block" id="history">
+			<h2 class="flick-display">History</h2>
+			<p class="intro">Every change to the desktop and installed software, by day, with Undo where it can be undone.</p>
+			<figure class="wide">
+				<Image
+					src={history}
+					alt="FlickOS Settings window on the History page: installed and removed packages listed by day, each with an Undo button"
+					widths={[720, 1080, 1366]}
+					sizes="min(100vw, 72rem)"
+				/>
+			</figure>
 		</section>
 
 		<section class="block">

@@ -58,10 +58,12 @@ Default desktop configuration:
 | `usr/share/wayland-sessions/flickos.desktop` | same | The session for other display managers |
 | `etc/xdg/labwc/rc.xml`, `menu.xml`, `environment` | `/etc/xdg/labwc/` | Keybindings, root menu, cursor |
 | `etc/xdg/labwc/autostart` | `/etc/xdg/labwc/` | Calls `/usr/libexec/flickos/autostart` |
-| `usr/libexec/flickos/autostart` | `/usr/libexec/flickos/` | Starts wallpaper (`flickos-layout wallpaper`), panel (`flickos-layout panel`), notifications, applets, idle lock (`flickos-control idle`, else a fixed swayidle) |
+| `usr/libexec/flickos/autostart` | `/usr/libexec/flickos/` | Starts kept screen arrangements (`flickos-control displays start`: kanshi, only while one is kept), wallpaper (`flickos-layout wallpaper`), panel (`flickos-layout panel`), notifications (and Do Not Disturb again: `flickos-control notifications`), applets, night light (`flickos-control night-light`, else the script), idle lock (`flickos-control idle`, else a fixed swayidle), and last the startup applications (`flickos-control startup run`) |
 | `usr/libexec/flickos/open-default` | `/usr/libexec/flickos/` | `browser` or `files`: starts the user's default app (`xdg-mime query default`, then `gio launch`), else `x-www-browser` or `pcmanfm`. Super+B, Super+E and the menu |
-| `etc/xdg/flickos/` | `/etc/xdg/flickos/` | foot, fuzzel and default-app config: `mimeapps.list`, and `xdg-terminals.list` (foot, for `xdg-terminal-exec`) |
-| `usr/share/flickos/` | `/usr/share/flickos/` | waybar and mako config |
+| `etc/xdg/flickos/` | `/etc/xdg/flickos/` | foot, fuzzel and default-app config: `mimeapps.list`, and `xdg-terminals.list` (foot, for `xdg-terminal-exec`); `autostart/` hides the XDG autostart entries of what autostart starts itself (nm-applet, blueman, the polkit agent, xdg-user-dirs) and keeps the print queue applet off |
+| `usr/libexec/flickos/lock` | `/usr/libexec/flickos/` | Locks the screen (Super+L, the menus): `flickos-control lock` (the background chosen in Settings), else `swaylock -f -c 383c4a` |
+| `usr/libexec/flickos/night-light` | `/usr/libexec/flickos/` | Starts wlsunset timed for the time zone's city (`zone1970.tab`), passing its own options on (`flickos-control night-light` gives `-t`) |
+| `usr/share/flickos/` | `/usr/share/flickos/` | waybar and mako config (the mako config has the `do-not-disturb` mode) |
 | `usr/share/backgrounds/flickos/default.jpg` | same | Wallpaper for layouts without their own, and without flickos-layouts |
 | `usr/share/glib-2.0/schemas/90_flickos-settings.gschema.override` | same | GTK theme (Arc-Dark), icons (Numix-Circle), fonts, dark mode, title bar buttons of windows that draw their own |
 | `usr/share/themes/FlickOS-Arc-Dark/labwc/themerc` | same | labwc window theme in Arc-Dark colors (arc-theme has none for labwc) |
@@ -94,12 +96,12 @@ the chosen layout and style at login and live (see
 
 | File in package | Installed to | Purpose |
 |---|---|---|
-| `usr/bin/flickos-layout` | `/usr/bin/` | Python 3 tool: `list`, `current`, `set`, `style list/current/set`, `clicks list/current/set`, `launcher list/current/set`, `menu-style list/current/set`, `prepare`, `panel`, `supervise`, `wallpaper`, `doctor`, `pick` (chooser), `first-run` |
+| `usr/bin/flickos-layout` | `/usr/bin/` | Python 3 tool: `list`, `current`, `set`, `style list/current/set`, `clicks list/current/set`, `launcher list/current/set`, `menu-style list/current/set`, `clock list/current/set`, `state` (all of them and doctor's warnings as JSON, for the Settings window), `prepare`, `panel`, `supervise`, `wallpaper`, `doctor`, `pick` (chooser), `first-run`. Every `set` also takes `default` (removes the user's choice), and every change that shows is recorded for *Settings → History* |
 | `usr/share/flickos/layouts/ID/` | same | One folder per layout (`redmond`, `cupertino`, `traditional`): `layout.ini`, `waybar.jsonc`, `style.css`, `preview.png`, `wallpaper.jpg` |
 | `debian/links` | `/usr/share/backgrounds/flickos/ID.jpg` | Links to the layouts' wallpapers, for waypaper |
 | `usr/share/flickos/layouts/common/` | same | `modules.jsonc` and `base.css`, shared by every layout |
 | `usr/share/flickos/styles/ID/` | same | One folder per style (`dark`, `light`): `style.ini` (GTK, icon and labwc theme names) and the palettes `waybar-colors.css`, `foot.ini`, `fuzzel.ini`, `mako.conf` |
-| `etc/xdg/flickos/layouts.conf` | same | Default layout, style, desktop clicks, apps button and start menu style (conffile) |
+| `etc/xdg/flickos/layouts.conf` | same | Default layout, style, desktop clicks, apps button, start menu style and clock (conffile) |
 | `usr/share/applications/flickos-layout.desktop` | same | *Desktop Layout & Style* in the app launcher (`flickos-layout pick`) |
 | `etc/skel/.config/flickos/choose-layout` | same | First-login marker: new accounts see the chooser once (`flickos-layout first-run`). Conffile |
 | `debian/flickos-layouts.lintian-overrides` | `/usr/share/lintian/overrides/` | Allows the marker in `/etc/skel` (see below) |
@@ -136,8 +138,13 @@ the chosen layout and style at login and live (see
   flickos-control's `control/environment` (the keyboard layout) it writes an
   overlay `labwc/environment`: the system one's lines (and its `environment.d/`),
   then the fragment's, since labwc reads only the first environment file it finds.
-- **It owns the apps button's choice** (`launcher`: `fuzzel`, the default, or
-  `menu`, flickos-menu's start menu, offered while that is installed). While the
+- **It owns the panel clock's hours** (`clock`: `24h`, the default and the
+  layouts' own formats, or `12h`): generating the panel gives each bar with a
+  clock its formats with `%I:%M %p` for `%H:%M` (the bar's own, else the
+  include's, else waybar's `{:%H:%M}`). *Settings → Date & Time* sets it.
+- **It owns the apps button's choice** (`launcher`: `menu`, flickos-menu's
+  start menu, the default while that is installed, or `fuzzel`, the app
+  launcher, the only choice without it). While the
   start menu is on, it writes the menu's corner (`Menu=` in `layout.ini`) to
   `menu/anchor`, adds the Super-tap keybinds to the rc.xml overlay, points the
   generated `custom/launcher` and the desktop clicks at the menu, and runs
@@ -225,6 +232,10 @@ it needs no bindings.
   list|add|remove PATTERN` changes the `Float=` list (the whole list goes into
   the user's file, since it replaces the system one), `flick-tiler gap N` the
   gap, and `status` also gives the main window width (`ratio`) and `gap`.
+  `mode`, `ratio` and `gap` take `default` (removes the user's value).
+- **History:** every change of these settings (Super+T and the panel
+  included) is recorded for *Settings → History*, like flickos-layout's (see
+  flickos-control).
 - **A Depends of `flickos-desktop`** and in the sanity hook's `REQUIRED`.
 - **Unit tests** in `tests/` (arrangements, window bookkeeping, fragment, the
   Wayland client against a fake compositor), run at package build like
@@ -261,15 +272,15 @@ go. Also *Settings → Keyboard Shortcuts* and the app launcher
 
 ### `flickos-menu`
 
-An optional start menu for the panel's apps button, in the style of the
+The start menu for the panel's apps button (the default), in the style of the
 desktop layout (`MenuStyle=`): Redmond's is classic (Windows 7: pinned apps,
-All apps by category and search on the left; the user, their folders,
+*All Apps* by category and search on the left; the user, their folders,
 Settings, Software and the power buttons on the right), Traditional's is
 categories (GNOME 2/Whisker), Cupertino's a full-screen grid of app icons
-(Launchpad). **Off by default**: the apps button opens fuzzel until a user picks *Start menu* under
-*Apps button* in *Settings → Desktop Layout & Style*
-(`flickos-layout launcher set menu`). Design and measurements:
-[design/flickos-menu.md](/docs/design/flickos-menu/).
+(Launchpad). **On by default** (since flickos-layouts 1.23): a user who wants fuzzel back picks
+*App launcher* under *Apps button* in *Settings → Desktop Layout & Style*
+(`flickos-layout launcher set fuzzel`). Design and measurements:
+[design/flickos-menu.md](https://github.com/dvbondoy/FlickOS/blob/main/docs/design/flickos-menu.md).
 
 | File in package | Installed to | Purpose |
 |---|---|---|
@@ -292,7 +303,7 @@ categories (GNOME 2/Whisker), Cupertino's a full-screen grid of app icons
   still shows flickos-shortcuts' sheet.
 - **Costs while on:** about 30 MB of private memory and no CPU while idle.
 - **Pinned apps:** `Pinned=` in the first `flickos/menu.conf` in
-  `XDG_CONFIG_DIRS`, until the user pins or unpins one (right-click an app);
+  `XDG_CONFIG_DIRS`, until the user pins or unpins one (right-click an app, or the Menu key);
   then `~/.config/flickos/menu`.
 - **Launching** goes through GLib (`Gio.DesktopAppInfo`), so `Terminal=true`
   apps open in the user's terminal (xdg-terminal-exec) and folders in their
@@ -309,19 +320,36 @@ app launcher): one window with a sidebar of pages, and the owner of the mouse,
 touchpad, keyboard and idle settings. One Python 3 file,
 `usr/bin/flickos-control`, GTK 3 through python3-gi with no CSS of its own, so
 it follows the Dark or Light style. Design and decisions:
-[design/flickos-control.md](/docs/design/flickos-control/).
+[design/flickos-control.md](https://github.com/dvbondoy/FlickOS/blob/main/docs/design/flickos-control.md).
 
 - **Pages:** *Desktop Layout & Style* (layout with previews, style, desktop
-  clicks), *Mouse & Touchpad*, *Keyboard* (layout and variant, repeat, Num
-  Lock, and the system layout), *Default Applications* (browser, file
+  clicks), *Displays* (the screens now, *Arrange Screens…* starts wdisplays,
+  *Keep This Arrangement*, the kept arrangements; night light on or off and
+  its warmth; shown while kanshi and wlr-randr are installed), *Mouse & Touchpad*, *Keyboard* (layout and
+  variant, repeat, Num Lock, and the system layout), *Language & Region*
+  (language and formats for the account, the system's through `localectl
+  set-locale`, which asks for the password; shown while the `locales`
+  package is installed), *Default Applications* (browser, file
   manager, text editor, image and document viewer, media player through
   `xdg-mime default`; the terminal through `~/.config/xdg-terminals.list`),
-  *Power & Idle* (lock and sleep times), *Date & Time* (time zone and network
+  *Startup Applications* (XDG autostart entries on or off, *Add App…*,
+  *Remove*), *Notifications* (Do Not Disturb), *Power & Idle* (lock and sleep times; what the power button, closing the
+  lid and closing it while plugged in do, read from logind; the lid rows only
+  with a lid switch), *Memory* (how much memory the computer has and uses,
+  and *Firefox: use less memory*: the helper's `firefox-memory on|off` writes
+  or deletes `/etc/firefox-esr/flickos-memory.js`, default prefs Debian's
+  Firefox reads at its next start; recommended when `old_computer()` finds
+  at most 3 GiB or no graphics acceleration; `docs/design/flickos-firefox.md`),
+  *Date & Time* (time zone and network
   time through `timedatectl`, which asks for the password; night-light is
-  restarted for the new time zone), *Login* (log in automatically; only on
+  restarted for the new time zone), *Updates* (automatically or not, which
+  updates, restarting when nobody is logged in; installed systems only),
+  *Login* (log in automatically; only on
   installed systems with flickos-greeter), *Users* (add and remove accounts,
-  administrator or not, set a password; installed systems only), *Tiling* (on/off, arrangement, main window width, gap, apps that
-  always float), *Keyboard Shortcuts* (the list, and a button for the sheet) and
+  administrator or not, set a password; installed systems only), *Firewall*
+  (ufw on or off; shown while ufw is installed), *Tiling* (on/off, arrangement, main window width, gap, apps that
+  always float), *Keyboard Shortcuts* (the list, and a button for the sheet),
+  *History* (recent changes with *Undo*; see below) and
   *More Settings* (tiles that start Wallpaper, Appearance, Displays, Network,
   Sound, Bluetooth, Printers and Software Updates; a tile is hidden when its app
   isn't installed) and *About* (FlickOS version from `/usr/lib/flickos-release`,
@@ -329,10 +357,17 @@ it follows the Dark or Light style. Design and decisions:
   desktop; *Copy System Info* puts the same text plus the FlickOS packages'
   versions on the clipboard with `wl-copy`, and *Report a Problem* opens the
   GitHub issues).
+- **Search:** a box above the page list finds pages, the rows and headings
+  the pages build (collected by `Ui.row()`/`Ui.heading()` while the window
+  opens) and the tiles' apps, also by `SEARCH_KEYWORDS` ("wifi", "volume",
+  "monitor"). A result opens the page scrolled to the setting with its
+  control focused, or starts the app. Ctrl+F, or a letter typed outside a
+  text field, starts a search; Escape clears it.
 - **Its own settings** (`SETTINGS`): touchpad (`tap`, natural scrolling,
   disable while typing, pointer speed, click method), mouse (left-handed,
   natural scrolling, pointer speed, acceleration) and keyboard (repeat delay and
-  rate, Num Lock, layout, variant). `flickos-control set KEY VALUE` saves one in
+  rate, Num Lock, layout, variant), plus `locale.language` and
+  `locale.formats` (below). `flickos-control set KEY VALUE` saves one in
   `~/.config/flickos/input` or `keyboard` (system defaults: the conffiles
   `/etc/xdg/flickos/input.conf` and `keyboard.conf`, all commented out),
   writes `$XDG_RUNTIME_DIR/flickos/control/labwc.xml` and `environment`, and runs
@@ -341,13 +376,68 @@ it follows the Dark or Light style. Design and decisions:
   never resets an option that disappears from its config, so a value once set
   stays written, and `set KEY default` stores the default rather than
   removing it. Only keys labwc 0.8.3 parses are used; the tests hold its list.
+- **Locking:** `flickos-control lock` execs `swaylock -f -c 383c4a` (the
+  Arc-Dark color, `lock.background` `color`) or, with `wallpaper`, adds the
+  images the user's swaybg shows (`-i OUTPUT:PATH` per `-o` group, `-s` its
+  mode). swayidle runs it, and flickos-settings' `/usr/libexec/flickos/lock`
+  (Super+L, the menus, the start menu). `idle.lock-before-sleep` (default
+  yes) is swayidle's `before-sleep`. `~/.config/flickos/lock`, conffile
+  `lock.conf`.
 - **Idle:** `flickos-control idle` (run by autostart, not in the live session)
   execs swayidle with the chosen times (`idle.lock-after`,
   `idle.suspend-after`; `~/.config/flickos/idle`, system defaults in the
   conffile `/etc/xdg/flickos/idle.conf`) and `FLICKOS_IDLE=1` in its
   environment. A change stops FlickOS's swayidle (that mark, or autostart's
   old fixed lock command) and starts a new one; a user's own swayidle is left
-  alone.
+  alone. It also locks the screen when logind asks (`lock`: the lid set to
+  *Lock the screen*, `loginctl lock-session`).
+- **Language and formats** (`~/.config/flickos/locale`, no system conffile:
+  the system's is `/etc/default/locale`) become `LANG`, `LANGUAGE` (empty),
+  `LC_MESSAGES` and the installer's nine `LC_*` format variables in
+  `control/environment`, after the keyboard lines; a format the system
+  doesn't set follows the language. Apps started afterwards use them, the
+  rest from the next login. `set` accepts only a generated locale (`locale
+  -a`); the page adds another first through the helper's `locale-add`.
+- **Night light** (`night-light.enabled`, default on, and
+  `night-light.temperature`, wlsunset's `-t`; `~/.config/flickos/night-light`,
+  conffile `/etc/xdg/flickos/night-light.conf`): `flickos-control
+  night-light` (autostart) execs flickos-settings' `night-light` script with
+  `-t` and `FLICKOS_NIGHT_LIGHT=1`, or nothing while it is off. A change or a
+  new time zone restarts only FlickOS's wlsunset (the mark, or the script's
+  own `-l -L`/`-S -s` options).
+- **Do Not Disturb** (`notifications.do-not-disturb`,
+  `~/.config/flickos/notifications`, conffile `notifications.conf`) is
+  mako's `do-not-disturb` mode (flickos-settings' mako config: all but
+  critical notifications invisible). `set` runs `makoctl mode -a|-r` only
+  while this user's mako owns `org.freedesktop.Notifications` (a `makoctl`
+  call before would have D-Bus start a plain mako); `flickos-control
+  notifications` (autostart) waits for mako and adds the mode again when it
+  is on. A user's own mako config without the mode is named on the page.
+- **Startup applications** (`flickos-control startup
+  list|enable|disable|add|remove|run`): the XDG autostart entries labwc
+  doesn't run, by the spec (`~/.config/autostart` first, then `autostart` in
+  `XDG_CONFIG_DIRS`; `Hidden`, `OnlyShowIn`/`NotShowIn`, `TryExec`, `Exec`
+  field codes, `Terminal`, `Path`, `X-GNOME-Autostart-Delay`). Off is
+  `X-GNOME-Autostart-enabled=false`, for a system entry in a user copy;
+  `add` copies an installed app's desktop file, `remove` deletes the user's
+  own. `run` (autostart, last) waits at most 10 s for the tray, then starts
+  the entries that are on.
+- **Automatic updates** are read from `apt-config dump`
+  (`flickos-control updates` prints them): on or off
+  (`APT::Periodic::Unattended-Upgrade`), the scope (the
+  `Unattended-Upgrade::Origins-Pattern` list: `security`, `debian` =
+  Debian's own, `all` = also `trixie-updates` and FlickOS, else `custom`),
+  restarting (`no`, `idle` = when nobody is logged in, `always`), and the last
+  run (the stamp file's time).
+- **Kept screen arrangements** (`flickos-control displays
+  list|save|forget NAME|all|start`): `save` writes a kanshi profile for the
+  screens connected now (from `wlr-randr --json`) into
+  `~/.config/flickos/displays`, one per set of screens, named after them so
+  keeping them again replaces it. `start` (autostart) execs `kanshi -c` that
+  file with `FLICKOS_DISPLAYS=1`, only while a profile is kept and no other
+  kanshi runs; `save` and `forget` make it reread (SIGHUP), start it or stop
+  it. kanshi applies the profile of the connected screens at login and on
+  every plug or unplug.
 - **The system keyboard layout** (login screen, console, new accounts) is
   `/etc/default/keyboard`. Debian's systemd forbids changing it through
   `localectl`, so the Keyboard page runs `pkexec
@@ -374,27 +464,93 @@ it follows the Dark or Light style. Design and decisions:
   `user-password NAME` reads the password on standard input. Only regular
   accounts (`UID_MIN`..`UID_MAX` of `/etc/login.defs`), names that match
   adduser's `NAME_REGEX`, and never away from the last administrator.
+- **The firewall** goes through the same helper: `firewall-on` runs `ufw
+  --force enable` (no question about ssh connections), `firewall-off` runs
+  `ufw disable` (actions `org.flickos.control.firewall-on`/`-off`). The page
+  reads `ENABLED=` from `/etc/ufw/ufw.conf`, which everyone can read, because
+  `ufw status` needs root. Rules stay a job for `sudo ufw` in a terminal. ufw
+  is a Recommends of flickos-desktop, not a dependency of this package: without
+  it the page is left out.
+- **The power button and the lid** go through the same helper: `power
+  power-key|lid|lid-external-power poweroff|suspend|lock|ignore|default`
+  rewrites `/etc/systemd/logind.conf.d/60-flickos.conf` and runs `systemctl
+  reload systemd-logind` (action `org.flickos.control.power`). **Adding a
+  language:** `locale-add LOCALE` (a UTF-8 locale of
+  `/usr/share/i18n/SUPPORTED`) turns its `/etc/locale.gen` line on and runs
+  `locale-gen --keep-existing` (action `org.flickos.control.locale-add`).
+  **Automatic updates:** `updates auto yes|no`, `scope
+  security|debian|all`, `reboot no|idle` (each also `default`) keeps the
+  choices in `/etc/apt/apt.conf.d/60flickos-updates` (after Debian's files;
+  `#clear` replaces the origins; action `org.flickos.control.updates`).
 - **For the other settings it owns nothing.** Each page runs the command that owns the setting,
-  the same one a user could type: `flickos-layout list|current|set`, `style …`,
-  `clicks …` and `doctor` (its warnings are shown on the page),
+  the same one a user could type: `flickos-layout state|set`, `style set`,
+  `clicks set`, … and `doctor` (its warnings are shown on the page),
   `flick-tiler status|modes|on|off|mode|ratio|gap|floating`, `flickos-shortcuts
-  list|show`. Changes run in the background (`Gio.Subprocess`), so the window
-  never blocks, and the page shows what the command printed. Pages read the
-  state again when shown: Super+T, the panel or the chooser may have changed it.
+  list|show`. Pages read when they are shown (Super+T, the panel or the chooser
+  may have changed something), in a background thread with a spinner until the
+  answer is there, so the window opens at once. Changes run in the background
+  too (`Gio.Subprocess`), and the page shows what the command printed.
+- **History** (*History* page, `flickos-control history [--days N] [--json]`,
+  `history undo ID`, `history clear`): every program that owns settings
+  (this one, flickos-layout, flick-tiler) appends one JSON line per change
+  that shows to `~/.local/state/flickos/history.jsonl` (0600; the older half is
+  dropped above 256 KiB), with its own `record()` in the same format. The page
+  shows the last 90 days, one framed list per day, at most 100 rows. Changes
+  of one setting less than two minutes apart are one, and one that ends where
+  it started is left out. **Undo** runs the owner's command with the old
+  value (`flickos-control set KEY OLD`, `flickos-layout set OLD`, `flick-tiler
+  on|off|mode|ratio|gap|floating`, where `default` removes the user's value),
+  only for the setting's newest change and only while the setting still holds
+  its new value. The file holds values, never commands. `history.enabled` (on
+  by default; conffile `/etc/xdg/flickos/history.conf`, which the other
+  owners read too) turns recording off and deletes the file. Design:
+  [design/flickos-history.md](https://github.com/dvbondoy/FlickOS/blob/main/docs/design/flickos-history.md).
+  - **System settings** (power button and lid, firewall, automatic login,
+    automatic updates, time zone, network time, the login screen's keyboard
+    layout) change through `flickos-control system KEY [VALUE]`, which the
+    pages run: it reads the value, runs the helper or `timedatectl`, and
+    records the change once it worked; undo runs it with the old value.
+    Default applications go through `flickos-control default-app list|set
+    CATEGORY APP`, startup applications through `startup`, and the Users and
+    Language pages record added and removed accounts, administrator on or off
+    (the only one of these with Undo) and added languages.
+  - **Software** comes from apt's own log, read by the helper without root
+    (`control-helper packages-list [DAYS]`): installs, removals and updates,
+    leaving out the installation (up to the installer's removal of itself; in
+    the live session, the image's build). An install or removal has *Undo*:
+    `packages-plan ID` (no root) says what it would do, the page shows that
+    first, and `pkexec control-helper packages-undo ID` (action
+    `org.flickos.control.packages-undo`) checks it again with `apt-get -s` and
+    refuses an undo that would remove anything else, anything flickos-desktop
+    depends on, or install a live-session package. Updates, autoremoves and
+    transactions that both installed and removed are shown without Undo.
+  - **Put back as it was** (*Put Back as It Was…*, `flickos-control history
+    restore WHEN [--dry-run]`): every setting changed since WHEN that needs
+    no password (FlickOS's own settings, layout, tiling, default and startup
+    applications) gets its value then, flickos-layout's in one `set`. The
+    dialog shows what goes back per day first. The restore is one row in the
+    list, and its Undo puts back what it changed. System settings and
+    software keep their own Undo.
 - **Commands:** `flickos-control [--page ID]` opens the window (one per
   session: `$XDG_RUNTIME_DIR/flickos/control.lock`), `flickos-control list`
   prints the page ids, `flickos-control about` prints the system information
-  (the text *Copy System Info* copies).
-- **Depends on** flickos-layouts (>= 1.13, which merges its fragment and
-  writes the environment overlay), flick-tiler (>= 1.3, for `floating`, `gap`
-  and the width in `status`), flickos-shortcuts, `pkexec` and `xkb-data` for
-  the helper, and `xdg-utils` for default apps.
+  (the text *Copy System Info* copies), `flickos-control system KEY [VALUE]`
+  and `default-app list|set` print and change system settings and default
+  applications.
+- **Depends on** flickos-layouts (>= 1.22: 1.13 merges its fragment and
+  writes the environment overlay, 1.19 has `state`, 1.22 records its changes
+  and takes `default`), flick-tiler (>= 1.5, for `floating`, `gap`, the width
+  in `status`, recording and `default`), flickos-shortcuts, `pkexec` and `xkb-data` for
+  the helper, `xdg-utils` for default apps, and `kanshi` and `wlr-randr` for
+  kept screen arrangements.
 - **A Depends of `flickos-desktop`** and in the sanity hook's `REQUIRED`.
 - **Unit tests** in `tests/` (reading the commands' output, tiles, the command
   line, the lock, the settings and fragments against labwc 0.8.3's key list,
   the helper), run at package build. The boot test opens the window on each
-  page and saves screenshots (`boot-test/control-*.png`), and applies a
-  touchpad option and a layout live.
+  page and saves screenshots (`boot-test/control-*.png`), applies a
+  touchpad option, a layout and the formats live, keeps and forgets a
+  screen arrangement (kanshi started and stopped), and records a clock change
+  and undoes it through `history`.
 
 ### `flickos-greeter`
 

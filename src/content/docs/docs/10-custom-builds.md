@@ -113,7 +113,7 @@ override them either. Only two things in this layer work from a package today:
 So for a single machine, edit the conffiles by hand. For a fleet, either divert
 them from the variant's maintainer scripts — messy on a conffile — or make the
 change in [Making variants cheaper](#making-variants-cheaper) first.
-[BUILD_A_VARIANT.md](../BUILD_A_VARIANT.md) walks into this wall deliberately
+[BUILD_A_VARIANT.md](https://github.com/dvbondoy/FlickOS/blob/main/BUILD_A_VARIANT.md) walks into this wall deliberately
 and shows both ways out.
 
 ## Layer 2: a variant meta-package
